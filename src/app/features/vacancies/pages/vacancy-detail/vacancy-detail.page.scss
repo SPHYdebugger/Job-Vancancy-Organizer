@@ -1,8 +1,10 @@
 .vacancy-placeholder {
-  border-radius: 20px;
-  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.88);
   padding: 1.5rem;
-  box-shadow: 0 10px 24px rgba(8, 15, 34, 0.08);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
 
   h1 {
     margin: 0 0 0.5rem;
@@ -10,6 +12,6 @@
 
   p {
     margin: 0;
-    color: #55607a;
   }
 }
+

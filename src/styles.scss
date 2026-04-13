@@ -1,3 +1,39 @@
+@use "@angular/material" as mat;
+
+@include mat.core();
+
+$jvo-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette
+  ),
+  density: (
+    scale: -1
+  )
+));
+
+@include mat.all-component-themes($jvo-theme);
+
+:root {
+  --bg-base: #f3f7ff;
+  --bg-elevated: #ffffff;
+  --bg-muted: #e9eefc;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-soft: #dbe5ff;
+  --brand-primary: #1d4ed8;
+  --brand-accent: #0891b2;
+  --success: #0f766e;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --shadow-strong: 0 20px 45px rgba(15, 23, 42, 0.12);
+  --transition-base: 240ms cubic-bezier(0.2, 0, 0, 1);
+}
+
 *,
 *::before,
 *::after {
@@ -8,7 +44,106 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  color: #101426;
-  background: #f2f4f8;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(29, 78, 216, 0.1), transparent 30%),
+    radial-gradient(circle at 100% 0%, rgba(8, 145, 178, 0.14), transparent 35%),
+    linear-gradient(180deg, #f7f9ff 0%, var(--bg-base) 45%, #eef3ff 100%);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: "Space Grotesk", "Manrope", "Segoe UI", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(29, 78, 216, 0.18);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(29, 78, 216, 0.28);
+  border-radius: 999px;
+}
+
+.surface-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-elevated) 92%, #ffffff 8%);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.fade-in {
+  animation: fade-in 380ms var(--transition-base);
+}
+
+.slide-up {
+  animation: slide-up 420ms var(--transition-base);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

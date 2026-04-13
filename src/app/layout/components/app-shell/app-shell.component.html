@@ -1,23 +1,59 @@
 <div class="app-shell">
-  <aside class="sidebar">
-    <h1>JVO</h1>
-    <nav>
+  <button
+    class="mobile-overlay"
+    type="button"
+    aria-label="Close navigation"
+    [class.visible]="isSidebarOpen()"
+    (click)="closeSidebar()"></button>
+
+  <aside class="sidebar" [class.open]="isSidebarOpen()">
+    <div class="brand">
+      <p class="eyebrow">Career Tracker</p>
+      <h1>JVO Workspace</h1>
+    </div>
+
+    <nav class="nav-list">
       @for (item of navigationItems; track item.route) {
-        <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ item.label }}</a>
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.route === '/app/vacancies' }"
+          (click)="closeSidebar()">
+          <span class="label">{{ item.label }}</span>
+          <span class="description">{{ item.description }}</span>
+        </a>
       }
     </nav>
+
+    <div class="sidebar-footer">
+      <p class="footer-title">System Status</p>
+      <p>Local mode active</p>
+    </div>
   </aside>
 
   <div class="content-area">
     <header class="topbar">
-      <div>
+      <div class="topbar-main">
+        <button class="menu-button" type="button" aria-label="Toggle navigation" (click)="toggleSidebar()">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div>
         <p class="overline">Job Vacancy Organizer</p>
-        <h2>Main Panel</h2>
+          <h2>{{ pageTitle() }}</h2>
+          <p class="subtitle">{{ pageDescription() }}</p>
+        </div>
       </div>
-      <a class="logout" routerLink="/auth/login" (click)="logout()">Sign Out</a>
+
+      <div class="topbar-actions">
+        <span class="date-chip">{{ todayLabel }}</span>
+        <a class="logout" routerLink="/auth/login" (click)="logout()">Sign Out</a>
+      </div>
     </header>
 
-    <main class="page-content">
+    <main class="page-content" [@routeTransition]="router.url">
       <router-outlet />
     </main>
   </div>
