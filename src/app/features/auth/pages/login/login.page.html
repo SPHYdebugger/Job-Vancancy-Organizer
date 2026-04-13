@@ -1,10 +1,73 @@
 <section class="login-page">
-  <article class="login-card">
-    <p class="eyebrow">Job Vacancy Organizer</p>
-    <h1>Access Your Application Dashboard</h1>
-    <p class="description">
-      Phase 1 completed: professional architecture is ready for a premium local authentication flow in the next phase.
-    </p>
-    <button type="button" (click)="loginDemoUser()">Sign In as Demo User</button>
+  <article class="login-card fade-in">
+    <section class="login-intro">
+      <p class="eyebrow">Job Vacancy Organizer</p>
+      <h1>Welcome back</h1>
+      <p class="description">
+        Sign in to manage your backend job applications with a structured, analytics-driven workflow.
+      </p>
+
+      <div class="credential-hint">
+        <p>Demo Account</p>
+        <code>{{ demoUsername }}</code>
+      </div>
+    </section>
+
+    <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Username</mat-label>
+        <input matInput formControlName="username" autocomplete="username" />
+        @if (shouldShowError('username')) {
+          <mat-error>
+            @if (usernameControl.hasError('required')) {
+              Username is required.
+            } @else if (usernameControl.hasError('minlength')) {
+              Username must be at least 4 characters.
+            }
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          [type]="hidePassword() ? 'password' : 'text'"
+          formControlName="password"
+          autocomplete="current-password" />
+        <button mat-button matSuffix type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+          {{ hidePassword() ? 'Show' : 'Hide' }}
+        </button>
+        @if (shouldShowError('password')) {
+          <mat-error>
+            @if (passwordControl.hasError('required')) {
+              Password is required.
+            } @else if (passwordControl.hasError('minlength')) {
+              Password must be at least 8 characters.
+            }
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <div class="form-meta">
+        <mat-checkbox formControlName="rememberSession">Keep me signed in</mat-checkbox>
+        <button type="button" class="demo-link" (click)="fillDemoCredentials()">
+          Use demo credentials
+        </button>
+      </div>
+
+      @if (errorMessage(); as message) {
+        <p class="error-banner">{{ message }}</p>
+      }
+
+      <button mat-flat-button type="submit" class="submit-button" [disabled]="!canSubmit()">
+        @if (isSubmitting()) {
+          <mat-spinner diameter="18"></mat-spinner>
+          Signing in...
+        } @else {
+          Sign in
+        }
+      </button>
+    </form>
   </article>
 </section>
