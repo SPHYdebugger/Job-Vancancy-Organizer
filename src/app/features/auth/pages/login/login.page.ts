@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -45,7 +45,6 @@ export class LoginPageComponent {
 
   protected readonly usernameControl = this.loginForm.controls.username;
   protected readonly passwordControl = this.loginForm.controls.password;
-  protected readonly canSubmit = computed(() => this.loginForm.valid && !this.isSubmitting());
 
   constructor(
     private readonly router: Router,

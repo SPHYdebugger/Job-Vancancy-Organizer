@@ -40,6 +40,17 @@
   box-shadow: var(--shadow-strong);
 
   .brand {
+    .brand-logo {
+      width: 228px;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      align-self: center;     // centers inside flex column (.login-intro)
+      margin: 0 auto 0.4rem;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 18px rgba(8, 145, 178, 0.3));
+    }
+
     h1 {
       margin: 0.3rem 0 0;
       font-size: 1.3rem;

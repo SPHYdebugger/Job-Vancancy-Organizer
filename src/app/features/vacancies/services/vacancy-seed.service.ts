@@ -21,20 +21,24 @@ export class VacancySeedService {
   ) {}
 
   public async initialize(): Promise<void> {
-    const isSeedCompleted = this.storageService.getItem<boolean>(SEED_FLAG_KEY) ?? false;
+    try {
+      const isSeedCompleted = this.storageService.getItem<boolean>(SEED_FLAG_KEY) ?? false;
 
-    if (isSeedCompleted && this.vacancyRepository.count() > 0) {
-      return;
+      if (isSeedCompleted && this.vacancyRepository.count() > 0) {
+        return;
+      }
+
+      const seedVacancies = await firstValueFrom(
+        this.httpClient.get<Vacancy[]>('assets/mocks/vacancies.seed.json')
+      );
+
+      const normalizedVacancies = seedVacancies.map((vacancy) => this.ensureFakeMarker(vacancy));
+
+      this.vacancyRepository.replaceAll(normalizedVacancies);
+      this.storageService.setItem(SEED_FLAG_KEY, true);
+    } catch (error) {
+      console.error('Vacancy seed initialization failed. App will continue without seeding.', error);
     }
-
-    const seedVacancies = await firstValueFrom(
-      this.httpClient.get<Vacancy[]>('assets/mocks/vacancies.seed.json')
-    );
-
-    const normalizedVacancies = seedVacancies.map((vacancy) => this.ensureFakeMarker(vacancy));
-
-    this.vacancyRepository.replaceAll(normalizedVacancies);
-    this.storageService.setItem(SEED_FLAG_KEY, true);
   }
 
   private ensureFakeMarker(vacancy: Vacancy): Vacancy {

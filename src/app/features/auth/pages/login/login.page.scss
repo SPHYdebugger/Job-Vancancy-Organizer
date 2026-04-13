@@ -51,6 +51,16 @@
   }
 }
 
+.intro-logo {
+  width: min(300px, 56vw);
+  height: auto;
+  object-fit: contain;
+  display: block;
+  align-self: center;     // centers inside flex column (.login-intro)
+  margin: 0 auto 0.4rem;
+  filter: drop-shadow(0 8px 24px rgba(15, 23, 42, 0.32));
+}
+
 .credential-hint {
   margin-top: 1.4rem;
   border: 1px solid rgba(255, 255, 255, 0.26);
@@ -140,5 +150,9 @@ mat-spinner {
 
   .login-intro {
     padding: 1.2rem;
+  }
+
+  .intro-logo {
+    width: min(180px, 60vw);
   }
 }

@@ -1,16 +1,13 @@
 <section class="login-page">
   <article class="login-card fade-in">
     <section class="login-intro">
-      <p class="eyebrow">Job Vacancy Organizer</p>
-      <h1>Welcome back</h1>
+      
+      <img class="intro-logo" src="/assets/images/JVO_logo.png" alt="JVO logo" />
       <p class="description">
         Sign in to manage your backend job applications with a structured, analytics-driven workflow.
       </p>
 
-      <div class="credential-hint">
-        <p>Demo Account</p>
-        <code>{{ demoUsername }}</code>
-      </div>
+      
     </section>
 
     <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submit()">
@@ -51,16 +48,14 @@
 
       <div class="form-meta">
         <mat-checkbox formControlName="rememberSession">Keep me signed in</mat-checkbox>
-        <button type="button" class="demo-link" (click)="fillDemoCredentials()">
-          Use demo credentials
-        </button>
+        
       </div>
 
       @if (errorMessage(); as message) {
         <p class="error-banner">{{ message }}</p>
       }
 
-      <button mat-flat-button type="submit" class="submit-button" [disabled]="!canSubmit()">
+      <button mat-flat-button type="submit" class="submit-button" [disabled]="loginForm.invalid || isSubmitting()">
         @if (isSubmitting()) {
           <mat-spinner diameter="18"></mat-spinner>
           Signing in...
