@@ -1,16 +1,101 @@
-.vacancy-placeholder {
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-soft);
-  background: rgba(255, 255, 255, 0.88);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(10px);
+.vacancy-list-shell {
+  padding: 1rem;
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
 
   h1 {
-    margin: 0 0 0.5rem;
+    margin: 0;
   }
 
   p {
-    margin: 0;
+    margin-top: 0.2rem;
+  }
+
+}
+
+.total {
+  margin: 0 0 0.9rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.excel-input {
+  display: none;
+}
+
+.list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.row {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 0.7rem 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.company {
+  color: var(--text-primary);
+  margin: 0;
+  font-weight: 700;
+}
+
+.position {
+  margin: 0.2rem 0 0;
+  font-size: 0.86rem;
+}
+
+.meta {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.status {
+  background: rgba(29, 78, 216, 0.12);
+  border-color: rgba(29, 78, 216, 0.25);
+  color: #1e40af;
+}
+
+.priority {
+  background: rgba(8, 145, 178, 0.12);
+  border-color: rgba(8, 145, 178, 0.25);
+  color: #0f766e;
+}
+
+@media (max-width: 720px) {
+  .vacancy-list-shell {
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

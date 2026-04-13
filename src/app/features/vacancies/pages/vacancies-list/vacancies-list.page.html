@@ -1,4 +1,46 @@
-<section class="vacancy-placeholder">
-  <h1>Applied Vacancies</h1>
-  <p>Base view ready for advanced filters, a premium table, and quick actions.</p>
+<section class="vacancy-list-shell surface-card">
+  <header>
+    <div>
+      <h1>Applied Vacancies</h1>
+      <p>Seeded local repository loaded for Phase 6 data modeling.</p>
+    </div>
+    <div class="actions">
+      <button type="button" mat-stroked-button (click)="openExcelImport()" [disabled]="isImporting()">
+        {{ isImporting() ? 'Importing...' : 'Import from Excel' }}
+      </button>
+      <a mat-flat-button routerLink="/app/vacancies/new">Add Vacancy</a>
+    </div>
+  </header>
+
+  <input
+    #excelFileInput
+    class="excel-input"
+    type="file"
+    accept=".xlsx,.xls"
+    (change)="onExcelFileSelected($event)" />
+
+  <p class="total">
+    Total seeded vacancies:
+    <strong>{{ totalVacancies$ | async }}</strong>
+  </p>
+
+  <section class="list">
+    @if (vacancies$ | async; as vacancies) {
+      @for (vacancy of vacancies; track trackById($index, vacancy)) {
+        <article class="row">
+          <div>
+            <p class="company">{{ vacancy.company }}</p>
+            <p class="position">{{ vacancy.position }}</p>
+          </div>
+          <div class="meta">
+            <span class="chip status">{{ vacancy.applicationStatus }}</span>
+            <span class="chip priority">{{ vacancy.priority }}</span>
+            <a mat-button [routerLink]="['/app/vacancies', vacancy.id]">View</a>
+            <a mat-button [routerLink]="['/app/vacancies', vacancy.id, 'edit']">Edit</a>
+            <button type="button" mat-button (click)="deleteVacancy(vacancy)">Delete</button>
+          </div>
+        </article>
+      }
+    }
+  </section>
 </section>

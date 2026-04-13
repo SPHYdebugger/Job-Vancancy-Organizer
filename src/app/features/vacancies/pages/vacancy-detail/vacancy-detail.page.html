@@ -1,4 +1,68 @@
-<section class="vacancy-placeholder">
-  <h1>Vacancy Detail</h1>
-  <p>Foundation ready for timeline, summary, and status tracking.</p>
-</section>
+@if (vacancy(); as currentVacancy) {
+  <section class="vacancy-detail-shell surface-card">
+    <header>
+      <div>
+        <h1>{{ currentVacancy.company }}</h1>
+        <p>{{ currentVacancy.position }}</p>
+      </div>
+      <div class="actions">
+        <a mat-stroked-button routerLink="/app/vacancies">Back</a>
+        <a mat-flat-button [routerLink]="['/app/vacancies', currentVacancy.id, 'edit']">Edit</a>
+        <button mat-stroked-button type="button" (click)="deleteVacancy()">Delete</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="item">
+        <h2>Status</h2>
+        <p>{{ currentVacancy.applicationStatus }}</p>
+      </article>
+      <article class="item">
+        <h2>Priority</h2>
+        <p>{{ currentVacancy.priority }}</p>
+      </article>
+      <article class="item">
+        <h2>Modality</h2>
+        <p>{{ currentVacancy.modality }}</p>
+      </article>
+      <article class="item">
+        <h2>Domain</h2>
+        <p>{{ currentVacancy.domain }}</p>
+      </article>
+      <article class="item">
+        <h2>Headquarters</h2>
+        <p>{{ currentVacancy.headquarters }}</p>
+      </article>
+      <article class="item">
+        <h2>Application Date</h2>
+        <p>{{ currentVacancy.applicationDate || '-' }}</p>
+      </article>
+      <article class="item">
+        <h2>Last Updated</h2>
+        <p>{{ currentVacancy.lastUpdatedAt | date: 'MMM d, y · HH:mm' }}</p>
+      </article>
+      <article class="item">
+        <h2>Contact</h2>
+        <p>{{ currentVacancy.contactName || '-' }}</p>
+      </article>
+      <article class="item wide">
+        <h2>Tags</h2>
+        <p>{{ currentVacancy.tags.join(', ') || '-' }}</p>
+      </article>
+      <article class="item wide">
+        <h2>Notes</h2>
+        <p>{{ currentVacancy.notes || '-' }}</p>
+      </article>
+      <article class="item wide">
+        <h2>HR Observations</h2>
+        <p>{{ currentVacancy.hrObservations || '-' }}</p>
+      </article>
+    </section>
+  </section>
+} @else {
+  <section class="vacancy-detail-shell surface-card empty">
+    <h1>Vacancy not found</h1>
+    <p>The requested record does not exist or was removed.</p>
+    <a mat-flat-button routerLink="/app/vacancies">Return to list</a>
+  </section>
+}
