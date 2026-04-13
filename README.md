@@ -1,5 +1,9 @@
 # Job Vacancy Organizer
 
+<p align="center">
+  <img src="src/assets/images/JVO_logo.png" alt="Job Vacancy Organizer logo" width="320" />
+</p>
+
 A portfolio-grade Angular SaaS-style web app to manage backend job applications with analytics, workflow tracking, and local-first persistence.
 
 ## Project Goals
@@ -58,6 +62,20 @@ src/
 - Phase 7: full vacancy CRUD + Excel import action
 - Phase 8: advanced filters, sorting, and pagination
 - Phase 9: README + Firebase Hosting preparation
+
+## UI Preview
+
+### Login Experience
+
+Premium local authentication screen with reactive validations, session persistence options, and polished visual feedback.
+
+![Login screen](src/assets/images/login_window.png)
+
+### Dashboard Experience
+
+SaaS-style analytics dashboard with KPI cards, charts, trend context, and activity panels focused on job-search execution quality.
+
+![Dashboard screen](src/assets/images/dashboard_window.png)
 
 ## Local Development
 
