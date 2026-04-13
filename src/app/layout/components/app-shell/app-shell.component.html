@@ -1,0 +1,24 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <h1>JVO</h1>
+    <nav>
+      @for (item of navigationItems; track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ item.label }}</a>
+      }
+    </nav>
+  </aside>
+
+  <div class="content-area">
+    <header class="topbar">
+      <div>
+        <p class="overline">Job Vacancy Organizer</p>
+        <h2>Main Panel</h2>
+      </div>
+      <a class="logout" routerLink="/auth/login" (click)="logout()">Sign Out</a>
+    </header>
+
+    <main class="page-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
