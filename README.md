@@ -1,59 +1,192 @@
-# JobVacancyOrganizer
+# Job Vacancy Organizer
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.23.
+A portfolio-grade Angular SaaS-style web app to manage backend job applications with analytics, workflow tracking, and local-first persistence.
 
-## Development server
+## Project Goals
 
-To start a local development server, run:
+- Track backend job opportunities end-to-end.
+- Visualize progress with a premium analytics dashboard.
+- Manage application lifecycle states, priorities, notes, and follow-ups.
+- Import existing opportunities from Excel (`.xlsx`) using your current column format.
+- Keep architecture ready for future migration to Firebase Authentication + Firestore.
 
-```bash
-ng serve
+## Tech Stack
+
+- Angular 20 (standalone components, strict TypeScript)
+- Reactive Forms
+- Angular Material
+- ApexCharts (`ng-apexcharts`)
+- Local persistence (`localStorage` / `sessionStorage`)
+- Excel import (`xlsx`)
+
+## Architecture
+
+```text
+src/
+  app/
+    core/
+      auth/
+      guards/
+      models/
+      services/
+    features/
+      auth/
+      dashboard/
+      vacancies/
+    layout/
+    shared/
+  assets/
+    mocks/
+  environments/
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Data Layer Design
 
-## Code scaffolding
+- `VacancyRepository` interface + injection token decouples data access from feature UI.
+- `LocalVacancyRepository` is the current concrete implementation.
+- Seeder runs at startup through `APP_INITIALIZER`.
+- This structure allows replacing local storage with Firestore repository later without rewriting pages.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Implemented Phases
 
-```bash
-ng generate component component-name
-```
+- Phase 1: project structure and routing foundations
+- Phase 2: global premium visual theme
+- Phase 3: responsive SaaS shell layout
+- Phase 4: premium local login with validation and guards
+- Phase 5: advanced dashboard (KPIs, charts, panels, animations)
+- Phase 6: vacancy model + realistic seed + repository abstraction
+- Phase 7: full vacancy CRUD + Excel import action
+- Phase 8: advanced filters, sorting, and pagination
+- Phase 9: README + Firebase Hosting preparation
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Local Development
 
-```bash
-ng generate --help
-```
+### Requirements
 
-## Building
+- Node.js 20+
+- npm 10+
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+### Install
 
 ```bash
-ng test
+npm install
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### Run
 
 ```bash
-ng e2e
+npm start
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+App URL:
 
-## Additional Resources
+- `http://localhost:4200`
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### Build
+
+```bash
+npm run build
+```
+
+Production build:
+
+```bash
+npm run build:prod
+```
+
+## Demo Credentials
+
+Configured in environment files:
+
+- Username: `demo.backend`
+- Password: `DemoBackend#2026`
+
+## Excel Import
+
+From **Applied Vacancies** view:
+
+1. Click `Import from Excel`
+2. Select your `.xlsx` file
+3. Importer maps these columns:
+   - `Fecha`
+   - `Empresa`
+   - `Ámbito` (or `Ambito`)
+   - `Sede`
+   - `Contacto`
+   - `Fecha Contacto`
+   - `Mensaje`
+   - `CV`
+   - `Respuesta`
+
+Seeded demo records are marked as `FAKE` in names by design.
+
+## Testing
+
+Run unit tests:
+
+```bash
+npm test
+```
+
+Current baseline includes tests for:
+
+- Auth service behavior
+- Local vacancy repository operations
+
+## Firebase Hosting Preparation
+
+Base files already included:
+
+- [firebase.json](./firebase.json)
+- [.firebaserc](./.firebaserc)
+
+### Configure your Firebase project
+
+1. Replace `your-firebase-project-id` in `.firebaserc`.
+2. Login:
+
+```bash
+npm run firebase:login
+```
+
+3. Deploy Hosting:
+
+```bash
+npm run firebase:deploy
+```
+
+### Optional Hosting Init (if you want to reconfigure)
+
+```bash
+npm run firebase:init
+```
+
+## Scripts
+
+- `npm start`: run development server
+- `npm run build`: build app
+- `npm run build:prod`: production build
+- `npm test`: run tests
+- `npm run firebase:login`: Firebase CLI login
+- `npm run firebase:init`: initialize hosting setup
+- `npm run firebase:serve`: build and deploy to preview channel
+- `npm run firebase:deploy`: build and deploy hosting
+
+## Firebase Migration Roadmap
+
+1. Add Firebase SDK (`firebase`, `@angular/fire`).
+2. Implement `FirestoreVacancyRepository` using the existing `VacancyRepository` interface.
+3. Swap provider in `app.config.ts` from local repository to Firestore implementation.
+4. Replace local auth service with Firebase Authentication provider.
+5. Move seed strategy to one-time cloud bootstrap script.
+
+## Portfolio Notes
+
+This project is intentionally designed with:
+
+- strong visual polish
+- clean feature-oriented architecture
+- strict typing and reusable service boundaries
+- realistic workflow and analytics behavior
+
+It is suitable to showcase frontend architecture quality and product-thinking execution in technical interviews.

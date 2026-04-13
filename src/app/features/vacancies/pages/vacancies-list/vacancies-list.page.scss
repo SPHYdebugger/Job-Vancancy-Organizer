@@ -16,11 +16,6 @@
   p {
     margin-top: 0.2rem;
   }
-
-}
-
-.total {
-  margin: 0 0 0.9rem;
 }
 
 .actions {
@@ -30,6 +25,41 @@
 
 .excel-input {
   display: none;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.9rem;
+
+  label {
+    display: grid;
+    gap: 0.2rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+
+    input {
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      background: #fff;
+      padding: 0.48rem 0.6rem;
+    }
+  }
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.total {
+  margin: 0 0 0.9rem;
 }
 
 .list {
@@ -86,7 +116,43 @@
   color: #0f766e;
 }
 
-@media (max-width: 720px) {
+.pagination {
+  margin-top: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-weight: 700;
+  }
+}
+
+.empty-state {
+  margin-top: 0.8rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.65rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+@media (max-width: 1240px) {
+  .filters-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 920px) {
   .vacancy-list-shell {
     header {
       flex-direction: column;
@@ -94,8 +160,24 @@
     }
   }
 
+  .filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .row {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions,
+  .pagination {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }

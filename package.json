@@ -5,8 +5,13 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "firebase:login": "npx firebase-tools login",
+    "firebase:init": "npx firebase-tools init hosting",
+    "firebase:serve": "npm run build:prod && npx firebase-tools hosting:channel:deploy local-preview",
+    "firebase:deploy": "npm run build:prod && npx firebase-tools deploy --only hosting"
   },
   "prettier": {
     "printWidth": 100,

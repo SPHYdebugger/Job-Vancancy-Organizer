@@ -2,7 +2,7 @@
   <header>
     <div>
       <h1>Applied Vacancies</h1>
-      <p>Seeded local repository loaded for Phase 6 data modeling.</p>
+      <p>Advanced filtering, sorting, and pagination over your real data repository.</p>
     </div>
     <div class="actions">
       <button type="button" mat-stroked-button (click)="openExcelImport()" [disabled]="isImporting()">
@@ -19,14 +19,118 @@
     accept=".xlsx,.xls"
     (change)="onExcelFileSelected($event)" />
 
+  <form class="filters-grid" [formGroup]="filtersForm">
+    <mat-form-field appearance="outline">
+      <mat-label>Global search</mat-label>
+      <input matInput formControlName="search" placeholder="Company, role, stack, notes..." />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Company</mat-label>
+      <mat-select formControlName="company">
+        <mat-option value="all">All</mat-option>
+        @for (company of companyOptions(); track company) {
+          <mat-option [value]="company">{{ company }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        <mat-option value="all">All</mat-option>
+        @for (status of statusOptions(); track status) {
+          <mat-option [value]="status">{{ status }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Modality</mat-label>
+      <mat-select formControlName="modality">
+        <mat-option value="all">All</mat-option>
+        @for (modality of modalityOptions(); track modality) {
+          <mat-option [value]="modality">{{ modality }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Priority</mat-label>
+      <mat-select formControlName="priority">
+        <mat-option value="all">All</mat-option>
+        @for (priority of priorityOptions(); track priority) {
+          <mat-option [value]="priority">{{ priority }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Stack</mat-label>
+      <mat-select formControlName="stack">
+        <mat-option value="all">All</mat-option>
+        @for (stack of stackOptions(); track stack) {
+          <mat-option [value]="stack">{{ stack }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Headquarters</mat-label>
+      <mat-select formControlName="headquarters">
+        <mat-option value="all">All</mat-option>
+        @for (headquarters of headquartersOptions(); track headquarters) {
+          <mat-option [value]="headquarters">{{ headquarters }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <label>
+      From date
+      <input type="date" formControlName="fromDate" />
+    </label>
+
+    <label>
+      To date
+      <input type="date" formControlName="toDate" />
+    </label>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Sort by</mat-label>
+      <mat-select formControlName="sortBy">
+        <mat-option value="updated_desc">Last update (newest)</mat-option>
+        <mat-option value="updated_asc">Last update (oldest)</mat-option>
+        <mat-option value="company_asc">Company (A-Z)</mat-option>
+        <mat-option value="company_desc">Company (Z-A)</mat-option>
+        <mat-option value="application_desc">Application date (newest)</mat-option>
+        <mat-option value="application_asc">Application date (oldest)</mat-option>
+        <mat-option value="priority_desc">Priority (high-low)</mat-option>
+        <mat-option value="priority_asc">Priority (low-high)</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Page size</mat-label>
+      <mat-select formControlName="pageSize">
+        <mat-option [value]="5">5</mat-option>
+        <mat-option [value]="8">8</mat-option>
+        <mat-option [value]="10">10</mat-option>
+        <mat-option [value]="15">15</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="filter-actions">
+      <button type="button" mat-stroked-button (click)="clearFilters()">Reset filters</button>
+    </div>
+  </form>
+
   <p class="total">
-    Total seeded vacancies:
-    <strong>{{ totalVacancies$ | async }}</strong>
+    Showing <strong>{{ filteredCount() }}</strong> of <strong>{{ totalVacancies() }}</strong> vacancies.
   </p>
 
-  <section class="list">
-    @if (vacancies$ | async; as vacancies) {
-      @for (vacancy of vacancies; track trackById($index, vacancy)) {
+  @if (paginatedVacancies().length > 0) {
+    <section class="list">
+      @for (vacancy of paginatedVacancies(); track trackById($index, vacancy)) {
         <article class="row">
           <div>
             <p class="company">{{ vacancy.company }}</p>
@@ -41,6 +145,22 @@
           </div>
         </article>
       }
-    }
-  </section>
+    </section>
+
+    <footer class="pagination">
+      <button type="button" mat-stroked-button (click)="previousPage()" [disabled]="currentPage() === 0">
+        Previous
+      </button>
+      <p>Page {{ pageDisplay() }}</p>
+      <button type="button" mat-stroked-button (click)="nextPage()" [disabled]="currentPage() >= totalPages() - 1">
+        Next
+      </button>
+    </footer>
+  } @else {
+    <section class="empty-state surface-card">
+      <h2>No vacancies match your current filters</h2>
+      <p>Try resetting filters or importing additional data from Excel.</p>
+      <button type="button" mat-flat-button (click)="clearFilters()">Reset filters</button>
+    </section>
+  }
 </section>
