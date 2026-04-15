@@ -4,8 +4,22 @@
       <h1>{{ isEditMode() ? 'Edit Vacancy' : 'Add Vacancy' }}</h1>
       <p>Structured form ready for production-oriented vacancy tracking.</p>
     </div>
-    <a routerLink="/app/vacancies">Back to list</a>
+    <div class="header-actions">
+      @if (!isEditMode()) {
+        <button type="button" mat-stroked-button (click)="openExcelImport()" [disabled]="isImporting()">
+          {{ isImporting() ? 'Importing...' : 'Import from Excel' }}
+        </button>
+      }
+      <a routerLink="/app/vacancies">Back to list</a>
+    </div>
   </header>
+
+  <input
+    #excelFileInput
+    class="excel-input"
+    type="file"
+    accept=".xlsx,.xls"
+    (change)="onExcelFileSelected($event)" />
 
   <form class="form-grid" [formGroup]="vacancyForm" (ngSubmit)="save()">
     <section class="block">

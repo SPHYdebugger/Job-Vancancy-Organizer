@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import {
   CompanyResponseState,
@@ -14,6 +15,7 @@ import {
   VacancyStatus,
   WorkModality
 } from '../../../../core/models/vacancy.model';
+import { VacancyExcelImportService } from '../../services/vacancy-excel-import.service';
 import { VacancyService } from '../../services/vacancy.service';
 
 @Component({
@@ -26,16 +28,21 @@ import { VacancyService } from '../../services/vacancy.service';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    MatSnackBarModule
   ],
   templateUrl: './vacancy-form.page.html',
   styleUrl: './vacancy-form.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VacancyFormPageComponent {
+  @ViewChild('excelFileInput') private readonly excelFileInput?: ElementRef<HTMLInputElement>;
+
   private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly vacancyExcelImportService = inject(VacancyExcelImportService);
   private readonly vacancyService = inject(VacancyService);
 
   private readonly editingVacancyId = this.route.snapshot.paramMap.get('id');
@@ -66,6 +73,7 @@ export class VacancyFormPageComponent {
   ];
 
   protected readonly isSaving = signal(false);
+  protected readonly isImporting = signal(false);
   protected readonly isEditMode = computed(() => Boolean(this.editingVacancy));
 
   protected readonly vacancyForm = this.formBuilder.nonNullable.group({
@@ -95,6 +103,46 @@ export class VacancyFormPageComponent {
   constructor() {
     if (this.editingVacancy) {
       this.patchForm(this.editingVacancy);
+    }
+  }
+
+  protected openExcelImport(): void {
+    this.excelFileInput?.nativeElement.click();
+  }
+
+  protected async onExcelFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    this.isImporting.set(true);
+
+    try {
+      const importResult = await this.vacancyExcelImportService.importFromFile(file);
+
+      for (const vacancy of importResult.vacancies) {
+        this.vacancyService.create(vacancy);
+      }
+
+      this.snackBar.open(
+        `Imported ${importResult.vacancies.length} vacancies from Excel (${importResult.skippedRows} skipped).`,
+        'Close',
+        { duration: 4500 }
+      );
+
+      if (importResult.vacancies.length > 0) {
+        void this.router.navigate(['/app/vacancies']);
+      }
+    } catch {
+      this.snackBar.open('Excel import failed. Please verify the file format.', 'Close', {
+        duration: 4500
+      });
+    } finally {
+      this.isImporting.set(false);
+      input.value = '';
     }
   }
 

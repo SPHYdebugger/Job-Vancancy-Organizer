@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -12,18 +12,26 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { Vacancy } from '../../../../core/models/vacancy.model';
-import { VacancyExcelImportService } from '../../services/vacancy-excel-import.service';
 import { VacancyService } from '../../services/vacancy.service';
 
 type SortOption =
+  | 'default'
   | 'updated_desc'
   | 'updated_asc'
   | 'company_asc'
   | 'company_desc'
+  | 'position_asc'
+  | 'position_desc'
+  | 'status_asc'
+  | 'status_desc'
+  | 'modality_asc'
+  | 'modality_desc'
   | 'application_desc'
   | 'application_asc'
   | 'priority_desc'
   | 'priority_asc';
+type SortColumn = 'company' | 'position' | 'status' | 'modality' | 'application' | 'priority' | 'updated';
+type SortDirection = 'asc' | 'desc';
 
 interface VacancyFilters {
   search: string;
@@ -58,11 +66,8 @@ interface VacancyFilters {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VacanciesListPageComponent {
-  @ViewChild('excelFileInput') private readonly excelFileInput?: ElementRef<HTMLInputElement>;
-
   private readonly formBuilder = inject(FormBuilder);
   private readonly vacancyService = inject(VacancyService);
-  private readonly vacancyExcelImportService = inject(VacancyExcelImportService);
   private readonly snackBar = inject(MatSnackBar);
 
   private readonly priorityRanking = new Map([
@@ -71,8 +76,8 @@ export class VacanciesListPageComponent {
     ['low', 1]
   ]);
 
-  protected readonly isImporting = signal(false);
   protected readonly currentPage = signal(0);
+  protected readonly pageSizeOptions = [5, 8, 10, 15];
 
   protected readonly filtersForm = this.formBuilder.nonNullable.group<VacancyFilters>({
     search: '',
@@ -84,7 +89,7 @@ export class VacanciesListPageComponent {
     headquarters: 'all',
     fromDate: '',
     toDate: '',
-    sortBy: 'updated_desc',
+    sortBy: 'default',
     pageSize: 8
   });
 
@@ -168,42 +173,6 @@ export class VacanciesListPageComponent {
     this.snackBar.open('Vacancy deleted.', 'Close', { duration: 2500 });
   }
 
-  protected openExcelImport(): void {
-    this.excelFileInput?.nativeElement.click();
-  }
-
-  protected async onExcelFileSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    this.isImporting.set(true);
-
-    try {
-      const importResult = await this.vacancyExcelImportService.importFromFile(file);
-
-      for (const vacancy of importResult.vacancies) {
-        this.vacancyService.create(vacancy);
-      }
-
-      this.snackBar.open(
-        `Imported ${importResult.vacancies.length} vacancies from Excel (${importResult.skippedRows} skipped).`,
-        'Close',
-        { duration: 4500 }
-      );
-    } catch {
-      this.snackBar.open('Excel import failed. Please verify the file format.', 'Close', {
-        duration: 4500
-      });
-    } finally {
-      this.isImporting.set(false);
-      input.value = '';
-    }
-  }
-
   protected clearFilters(): void {
     this.filtersForm.patchValue({
       search: '',
@@ -215,9 +184,29 @@ export class VacanciesListPageComponent {
       headquarters: 'all',
       fromDate: '',
       toDate: '',
-      sortBy: 'updated_desc',
+      sortBy: 'default',
       pageSize: 8
     });
+  }
+
+  protected toggleColumnSort(column: SortColumn): void {
+    const currentSort = this.normalizeFilters(this.filters()).sortBy;
+    const currentDirection = this.sortDirectionFor(column, currentSort);
+    const nextSort =
+      currentDirection === null
+        ? this.resolveSortOption(column, 'asc')
+        : currentDirection === 'asc'
+          ? this.resolveSortOption(column, 'desc')
+          : 'default';
+    this.filtersForm.patchValue({ sortBy: nextSort });
+  }
+
+  protected getColumnSortDirection(column: SortColumn): SortDirection | null {
+    return this.sortDirectionFor(column, this.normalizeFilters(this.filters()).sortBy);
+  }
+
+  protected setPageSize(pageSize: number): void {
+    this.filtersForm.patchValue({ pageSize });
   }
 
   protected previousPage(): void {
@@ -305,6 +294,10 @@ export class VacanciesListPageComponent {
       return true;
     });
 
+    if (filters.sortBy === 'default') {
+      return filtered;
+    }
+
     return filtered.sort((left, right) => this.compareVacancies(left, right, filters.sortBy));
   }
 
@@ -325,6 +318,18 @@ export class VacanciesListPageComponent {
         return left.company.localeCompare(right.company);
       case 'company_desc':
         return right.company.localeCompare(left.company);
+      case 'position_asc':
+        return left.position.localeCompare(right.position);
+      case 'position_desc':
+        return right.position.localeCompare(left.position);
+      case 'status_asc':
+        return left.applicationStatus.localeCompare(right.applicationStatus);
+      case 'status_desc':
+        return right.applicationStatus.localeCompare(left.applicationStatus);
+      case 'modality_asc':
+        return left.modality.localeCompare(right.modality);
+      case 'modality_desc':
+        return right.modality.localeCompare(left.modality);
       case 'application_asc':
         return leftApplication - rightApplication;
       case 'application_desc':
@@ -355,8 +360,49 @@ export class VacanciesListPageComponent {
       headquarters: rawFilters.headquarters ?? 'all',
       fromDate: rawFilters.fromDate ?? '',
       toDate: rawFilters.toDate ?? '',
-      sortBy: rawFilters.sortBy ?? 'updated_desc',
+      sortBy: rawFilters.sortBy ?? 'default',
       pageSize: rawFilters.pageSize ?? 8
     };
+  }
+
+  private resolveSortOption(column: SortColumn, direction: SortDirection): SortOption {
+    switch (column) {
+      case 'company':
+        return direction === 'asc' ? 'company_asc' : 'company_desc';
+      case 'position':
+        return direction === 'asc' ? 'position_asc' : 'position_desc';
+      case 'status':
+        return direction === 'asc' ? 'status_asc' : 'status_desc';
+      case 'modality':
+        return direction === 'asc' ? 'modality_asc' : 'modality_desc';
+      case 'application':
+        return direction === 'asc' ? 'application_asc' : 'application_desc';
+      case 'priority':
+        return direction === 'asc' ? 'priority_asc' : 'priority_desc';
+      case 'updated':
+        return direction === 'asc' ? 'updated_asc' : 'updated_desc';
+      default:
+        return 'updated_desc';
+    }
+  }
+
+  private sortDirectionFor(column: SortColumn, sortBy: SortOption): SortDirection | null {
+    if (sortBy === 'default') {
+      return null;
+    }
+
+    if (sortBy.startsWith(`${column}_`)) {
+      return sortBy.endsWith('_asc') ? 'asc' : 'desc';
+    }
+
+    if (column === 'application' && sortBy.startsWith('application_')) {
+      return sortBy.endsWith('_asc') ? 'asc' : 'desc';
+    }
+
+    if (column === 'updated' && sortBy.startsWith('updated_')) {
+      return sortBy.endsWith('_asc') ? 'asc' : 'desc';
+    }
+
+    return null;
   }
 }

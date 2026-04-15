@@ -4,20 +4,7 @@
       <h1>Applied Vacancies</h1>
       <p>Advanced filtering, sorting, and pagination over your real data repository.</p>
     </div>
-    <div class="actions">
-      <button type="button" mat-stroked-button (click)="openExcelImport()" [disabled]="isImporting()">
-        {{ isImporting() ? 'Importing...' : 'Import from Excel' }}
-      </button>
-      <a mat-flat-button routerLink="/app/vacancies/new">Add Vacancy</a>
-    </div>
   </header>
-
-  <input
-    #excelFileInput
-    class="excel-input"
-    type="file"
-    accept=".xlsx,.xls"
-    (change)="onExcelFileSelected($event)" />
 
   <form class="filters-grid" [formGroup]="filtersForm">
     <mat-form-field appearance="outline">
@@ -95,56 +82,118 @@
       <input type="date" formControlName="toDate" />
     </label>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Sort by</mat-label>
-      <mat-select formControlName="sortBy">
-        <mat-option value="updated_desc">Last update (newest)</mat-option>
-        <mat-option value="updated_asc">Last update (oldest)</mat-option>
-        <mat-option value="company_asc">Company (A-Z)</mat-option>
-        <mat-option value="company_desc">Company (Z-A)</mat-option>
-        <mat-option value="application_desc">Application date (newest)</mat-option>
-        <mat-option value="application_asc">Application date (oldest)</mat-option>
-        <mat-option value="priority_desc">Priority (high-low)</mat-option>
-        <mat-option value="priority_asc">Priority (low-high)</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Page size</mat-label>
-      <mat-select formControlName="pageSize">
-        <mat-option [value]="5">5</mat-option>
-        <mat-option [value]="8">8</mat-option>
-        <mat-option [value]="10">10</mat-option>
-        <mat-option [value]="15">15</mat-option>
-      </mat-select>
-    </mat-form-field>
-
     <div class="filter-actions">
       <button type="button" mat-stroked-button (click)="clearFilters()">Reset filters</button>
     </div>
   </form>
 
-  <p class="total">
-    Showing <strong>{{ filteredCount() }}</strong> of <strong>{{ totalVacancies() }}</strong> vacancies.
-  </p>
-
   @if (paginatedVacancies().length > 0) {
-    <section class="list">
-      @for (vacancy of paginatedVacancies(); track trackById($index, vacancy)) {
-        <article class="row">
-          <div>
-            <p class="company">{{ vacancy.company }}</p>
-            <p class="position">{{ vacancy.position }}</p>
-          </div>
-          <div class="meta">
-            <span class="chip status">{{ vacancy.applicationStatus }}</span>
-            <span class="chip priority">{{ vacancy.priority }}</span>
-            <a mat-button [routerLink]="['/app/vacancies', vacancy.id]">View</a>
-            <a mat-button [routerLink]="['/app/vacancies', vacancy.id, 'edit']">Edit</a>
-            <button type="button" mat-button (click)="deleteVacancy(vacancy)">Delete</button>
-          </div>
-        </article>
-      }
+    <section class="table-shell">
+      <header class="table-header">
+        <p class="total">
+          Showing <strong>{{ filteredCount() }}</strong> of <strong>{{ totalVacancies() }}</strong> vacancies.
+        </p>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="page-size-field">
+          <mat-label>Results per page</mat-label>
+          <mat-select [value]="pageSize()" (selectionChange)="setPageSize($event.value)">
+            @for (option of pageSizeOptions; track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </header>
+
+      <div class="table-scroll">
+        <table class="vacancies-table">
+          <thead>
+            <tr>
+              <th>
+                <button type="button" class="sort-trigger" (click)="toggleColumnSort('company')">
+                  Company
+                  <span class="sort-indicator" [class.active]="getColumnSortDirection('company')">
+                    {{ getColumnSortDirection('company') === 'asc' ? '↑' : getColumnSortDirection('company') ===
+                    'desc' ? '↓' : '↕' }}
+                  </span>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-trigger" (click)="toggleColumnSort('position')">
+                  Position
+                  <span class="sort-indicator" [class.active]="getColumnSortDirection('position')">
+                    {{ getColumnSortDirection('position') === 'asc' ? '↑' : getColumnSortDirection('position') ===
+                    'desc' ? '↓' : '↕' }}
+                  </span>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-trigger" (click)="toggleColumnSort('status')">
+                  Status
+                  <span class="sort-indicator" [class.active]="getColumnSortDirection('status')">
+                    {{ getColumnSortDirection('status') === 'asc' ? '↑' : getColumnSortDirection('status') ===
+                    'desc' ? '↓' : '↕' }}
+                  </span>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-trigger" (click)="toggleColumnSort('modality')">
+                  Modality
+                  <span class="sort-indicator" [class.active]="getColumnSortDirection('modality')">
+                    {{ getColumnSortDirection('modality') === 'asc' ? '↑' : getColumnSortDirection('modality') ===
+                    'desc' ? '↓' : '↕' }}
+                  </span>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-trigger" (click)="toggleColumnSort('application')">
+                  Application Date
+                  <span class="sort-indicator" [class.active]="getColumnSortDirection('application')">
+                    {{ getColumnSortDirection('application') === 'asc' ? '↑' : getColumnSortDirection('application')
+                    === 'desc' ? '↓' : '↕' }}
+                  </span>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-trigger" (click)="toggleColumnSort('priority')">
+                  Priority
+                  <span class="sort-indicator" [class.active]="getColumnSortDirection('priority')">
+                    {{ getColumnSortDirection('priority') === 'asc' ? '↑' : getColumnSortDirection('priority') ===
+                    'desc' ? '↓' : '↕' }}
+                  </span>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-trigger" (click)="toggleColumnSort('updated')">
+                  Last Update
+                  <span class="sort-indicator" [class.active]="getColumnSortDirection('updated')">
+                    {{ getColumnSortDirection('updated') === 'asc' ? '↑' : getColumnSortDirection('updated') ===
+                    'desc' ? '↓' : '↕' }}
+                  </span>
+                </button>
+              </th>
+              <th class="actions-column">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (vacancy of paginatedVacancies(); track trackById($index, vacancy)) {
+              <tr>
+                <td class="company-cell">{{ vacancy.company }}</td>
+                <td>{{ vacancy.position }}</td>
+                <td><span class="chip status">{{ vacancy.applicationStatus }}</span></td>
+                <td>{{ vacancy.modality }}</td>
+                <td>{{ vacancy.applicationDate || vacancy.createdAt | date: 'MMM d, y' }}</td>
+                <td><span class="chip priority">{{ vacancy.priority }}</span></td>
+                <td>{{ vacancy.lastUpdatedAt | date: 'MMM d, y' }}</td>
+                <td class="actions-cell">
+                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id]">View</a>
+                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id, 'edit']">Edit</a>
+                  <button type="button" mat-button (click)="deleteVacancy(vacancy)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <footer class="pagination">

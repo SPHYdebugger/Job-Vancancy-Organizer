@@ -27,32 +27,16 @@
     </nav>
 
     <div class="sidebar-footer">
-      <p class="footer-title">System Status</p>
-      <p>Local mode active</p>
+      <a class="signout-link" routerLink="/auth/login" (click)="logout()">Sign Out</a>
     </div>
   </aside>
 
   <div class="content-area">
-    <header class="topbar">
-      <div class="topbar-main">
-        <button class="menu-button" type="button" aria-label="Toggle navigation" (click)="toggleSidebar()">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-
-        <div>
-        <p class="overline">Job Vacancy Organizer</p>
-          <h2>{{ pageTitle() }}</h2>
-          <p class="subtitle">{{ pageDescription() }}</p>
-        </div>
-      </div>
-
-      <div class="topbar-actions">
-        <span class="date-chip">{{ todayLabel }}</span>
-        <a class="logout" routerLink="/auth/login" (click)="logout()">Sign Out</a>
-      </div>
-    </header>
+    <button class="menu-button menu-button-inline" type="button" aria-label="Toggle navigation" (click)="toggleSidebar()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
 
     <main class="page-content" [@routeTransition]="router.url">
       <router-outlet />
