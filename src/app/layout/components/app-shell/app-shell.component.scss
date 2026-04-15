@@ -50,7 +50,7 @@
       max-width: 100%;
       height: auto;
       display: block;
-      margin: 0;
+      margin: 0 auto;
       object-fit: contain;
       filter: drop-shadow(0 8px 16px rgba(37, 99, 235, 0.25));
     }
@@ -181,7 +181,7 @@
 
 .content-area {
   min-width: 0;
-  padding: 0.45rem 0.5rem 0.9rem;
+  padding: 0 0.5rem;
 }
 
 .menu-button {
@@ -208,7 +208,7 @@
 }
 
 .menu-button-inline {
-  margin: 0 0 0.55rem;
+  margin: 0 0 0.45rem;
 }
 
 .page-content {
@@ -244,6 +244,6 @@
 
 @media (max-width: 720px) {
   .content-area {
-    padding-top: 0.2rem;
+    padding-top: 0;
   }
 }

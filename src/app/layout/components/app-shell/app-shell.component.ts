@@ -8,6 +8,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { AppPreloadService } from '../../../core/services/app-preload.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface NavigationItem {
@@ -36,6 +37,7 @@ export class AppShellComponent {
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly i18nService = inject(I18nService);
+  private readonly appPreloadService = inject(AppPreloadService);
   protected readonly router = inject(Router);
 
   protected readonly isSidebarOpen = signal(false);
@@ -67,6 +69,8 @@ export class AppShellComponent {
   ];
 
   constructor() {
+    this.appPreloadService.preloadDashboardAssets();
+
     this.router.events
       .pipe(
         startWith(new NavigationEnd(0, this.router.url, this.router.url)),

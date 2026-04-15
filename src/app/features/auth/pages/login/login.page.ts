@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
+import { AppPreloadService } from '../../../../core/services/app-preload.service';
 import { TranslationKey } from '../../../../core/i18n/translations';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { environment } from '../../../../../environments/environment';
@@ -34,6 +35,7 @@ import { environment } from '../../../../../environments/environment';
 export class LoginPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly i18nService = inject(I18nService);
+  private readonly appPreloadService = inject(AppPreloadService);
 
   protected readonly isSubmitting = signal(false);
   protected readonly submitted = signal(false);
@@ -55,7 +57,9 @@ export class LoginPageComponent {
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly authService: AuthService
-  ) {}
+  ) {
+    this.appPreloadService.preloadDashboardAssets();
+  }
 
   public submit(): void {
     this.submitted.set(true);

@@ -1,10 +1,9 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { animate, query, stagger, style, transition, trigger } from '@angular/animations';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -33,7 +32,6 @@ import {
   DistributionPoint,
   KpiMetric,
   NextAction,
-  ProgressSnapshot,
   RecentVacancy,
   StackPoint
 } from '../../models/dashboard-analytics.model';
@@ -76,6 +74,8 @@ interface HorizontalBarOptions {
   colors: string[];
 }
 
+type ChartKey = 'applications' | 'status' | 'modality' | 'stack';
+
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
@@ -84,7 +84,6 @@ interface HorizontalBarOptions {
     DatePipe,
     MatCardModule,
     MatButtonModule,
-    MatProgressBarModule,
     MatChipsModule,
     NgApexchartsModule,
     TranslatePipe
@@ -116,13 +115,19 @@ interface HorizontalBarOptions {
 export class DashboardPageComponent {
   private readonly analyticsService = inject(DashboardAnalyticsService);
   private readonly i18nService = inject(I18nService);
+  private readonly loaderMinDurationMs = 120;
 
   protected readonly analytics: DashboardAnalytics = this.analyticsService.getAnalytics();
   protected readonly kpiMetrics: KpiMetric[] = this.analytics.metrics;
   protected readonly nextActions: NextAction[] = this.analytics.nextActions;
   protected readonly recentVacancies: RecentVacancy[] = this.analytics.recentVacancies;
   protected readonly topCompanies: CompanyInteraction[] = this.analytics.topCompanies;
-  protected readonly progress = this.analytics.progress;
+  protected readonly chartLoadingState = signal<Record<ChartKey, boolean>>({
+    applications: true,
+    status: true,
+    modality: true,
+    stack: true
+  });
 
   protected readonly locale = this.i18nService.locale;
   protected readonly applicationsChart = computed(() => {
@@ -142,7 +147,15 @@ export class DashboardPageComponent {
     return this.buildStackBarChart(this.analytics.stackBreakdown);
   });
 
-  protected readonly globalProgress = computed(() => this.calculateGlobalProgress(this.progress));
+  protected isChartLoading(chart: ChartKey): boolean {
+    return this.chartLoadingState()[chart];
+  }
+
+  protected onChartMounted(chart: ChartKey): void {
+    window.setTimeout(() => {
+      this.chartLoadingState.update((currentState) => ({ ...currentState, [chart]: false }));
+    }, this.loaderMinDurationMs);
+  }
 
   protected metricTrendClass(metric: KpiMetric): string {
     if (metric.trendDirection === 'up') {
@@ -230,7 +243,9 @@ export class DashboardPageComponent {
         height: 290,
         toolbar: { show: false },
         zoom: { enabled: false },
-        sparkline: { enabled: false }
+        animations: { enabled: false },
+        sparkline: { enabled: false },
+        events: this.chartEvents('applications')
       },
       colors: ['#1d4ed8'],
       stroke: {
@@ -284,7 +299,9 @@ export class DashboardPageComponent {
       labels: distribution.map((item) => this.statusLabel(item.label)),
       chart: {
         type: 'donut',
-        height: 300
+        height: 300,
+        animations: { enabled: false },
+        events: this.chartEvents('status')
       },
       colors: ['#1d4ed8', '#0284c7', '#0f766e', '#f59e0b', '#ef4444', '#7c3aed', '#16a34a'],
       legend: {
@@ -329,7 +346,9 @@ export class DashboardPageComponent {
       labels: distribution.map((item) => this.translateModalityLabel(item.label)),
       chart: {
         type: 'donut',
-        height: 300
+        height: 300,
+        animations: { enabled: false },
+        events: this.chartEvents('modality')
       },
       colors: ['#1d4ed8', '#0891b2', '#334155'],
       legend: {
@@ -379,7 +398,9 @@ export class DashboardPageComponent {
       chart: {
         type: 'bar',
         height: 300,
-        toolbar: { show: false }
+        animations: { enabled: false },
+        toolbar: { show: false },
+        events: this.chartEvents('stack')
       },
       colors: ['#0f766e'],
       plotOptions: {
@@ -457,12 +478,9 @@ export class DashboardPageComponent {
     return this.i18nService.translate(modalityMap[normalized] ?? 'modality.remote');
   }
 
-  private calculateGlobalProgress(progress: ProgressSnapshot): number {
-    const applicationsRatio = progress.applicationsDone / progress.applicationsGoal;
-    const interviewsRatio = progress.interviewsDone / progress.interviewsGoal;
-    const followUpsRatio = progress.followUpsDone / progress.followUpsGoal;
-
-    const weightedScore = applicationsRatio * 0.45 + interviewsRatio * 0.35 + followUpsRatio * 0.2;
-    return Math.round(Math.min(weightedScore * 100, 100));
+  private chartEvents(chart: ChartKey): ApexChart['events'] {
+    return {
+      mounted: () => this.onChartMounted(chart)
+    };
   }
 }

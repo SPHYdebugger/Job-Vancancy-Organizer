@@ -19,18 +19,25 @@
           <p>{{ 'dashboard.section.applicationsEvolutionSubtitle' | t }}</p>
         </div>
       </div>
-      <apx-chart
-        [series]="applicationsChart().series"
-        [chart]="applicationsChart().chart"
-        [xaxis]="applicationsChart().xaxis"
-        [yaxis]="applicationsChart().yaxis"
-        [stroke]="applicationsChart().stroke"
-        [grid]="applicationsChart().grid"
-        [fill]="applicationsChart().fill"
-        [dataLabels]="applicationsChart().dataLabels"
-        [tooltip]="applicationsChart().tooltip"
-        [colors]="applicationsChart().colors">
-      </apx-chart>
+      <div class="chart-host">
+        <apx-chart
+          [series]="applicationsChart().series"
+          [chart]="applicationsChart().chart"
+          [xaxis]="applicationsChart().xaxis"
+          [yaxis]="applicationsChart().yaxis"
+          [stroke]="applicationsChart().stroke"
+          [grid]="applicationsChart().grid"
+          [fill]="applicationsChart().fill"
+          [dataLabels]="applicationsChart().dataLabels"
+          [tooltip]="applicationsChart().tooltip"
+          [colors]="applicationsChart().colors">
+        </apx-chart>
+        @if (isChartLoading('applications')) {
+          <div class="chart-loader-overlay">
+            <span class="chart-spinner" aria-hidden="true"></span>
+          </div>
+        }
+      </div>
     </article>
 
     <article class="panel surface-card">
@@ -40,18 +47,25 @@
           <p>{{ 'dashboard.section.statusDistributionSubtitle' | t }}</p>
         </div>
       </div>
-      <apx-chart
-        [series]="statusChart().series"
-        [chart]="statusChart().chart"
-        [labels]="statusChart().labels"
-        [legend]="statusChart().legend"
-        [plotOptions]="statusChart().plotOptions"
-        [dataLabels]="statusChart().dataLabels"
-        [stroke]="statusChart().stroke"
-        [tooltip]="statusChart().tooltip"
-        [colors]="statusChart().colors"
-        [responsive]="statusChart().responsive">
-      </apx-chart>
+      <div class="chart-host">
+        <apx-chart
+          [series]="statusChart().series"
+          [chart]="statusChart().chart"
+          [labels]="statusChart().labels"
+          [legend]="statusChart().legend"
+          [plotOptions]="statusChart().plotOptions"
+          [dataLabels]="statusChart().dataLabels"
+          [stroke]="statusChart().stroke"
+          [tooltip]="statusChart().tooltip"
+          [colors]="statusChart().colors"
+          [responsive]="statusChart().responsive">
+        </apx-chart>
+        @if (isChartLoading('status')) {
+          <div class="chart-loader-overlay">
+            <span class="chart-spinner" aria-hidden="true"></span>
+          </div>
+        }
+      </div>
     </article>
 
     <article class="panel surface-card">
@@ -61,18 +75,25 @@
           <p>{{ 'dashboard.section.workModalitySubtitle' | t }}</p>
         </div>
       </div>
-      <apx-chart
-        [series]="modalityChart().series"
-        [chart]="modalityChart().chart"
-        [labels]="modalityChart().labels"
-        [legend]="modalityChart().legend"
-        [plotOptions]="modalityChart().plotOptions"
-        [dataLabels]="modalityChart().dataLabels"
-        [stroke]="modalityChart().stroke"
-        [tooltip]="modalityChart().tooltip"
-        [colors]="modalityChart().colors"
-        [responsive]="modalityChart().responsive">
-      </apx-chart>
+      <div class="chart-host">
+        <apx-chart
+          [series]="modalityChart().series"
+          [chart]="modalityChart().chart"
+          [labels]="modalityChart().labels"
+          [legend]="modalityChart().legend"
+          [plotOptions]="modalityChart().plotOptions"
+          [dataLabels]="modalityChart().dataLabels"
+          [stroke]="modalityChart().stroke"
+          [tooltip]="modalityChart().tooltip"
+          [colors]="modalityChart().colors"
+          [responsive]="modalityChart().responsive">
+        </apx-chart>
+        @if (isChartLoading('modality')) {
+          <div class="chart-loader-overlay">
+            <span class="chart-spinner" aria-hidden="true"></span>
+          </div>
+        }
+      </div>
     </article>
 
     <article class="panel panel-wide surface-card">
@@ -82,140 +103,150 @@
           <p>{{ 'dashboard.section.stackDemandSubtitle' | t }}</p>
         </div>
       </div>
-      <apx-chart
-        [series]="stackChart().series"
-        [chart]="stackChart().chart"
-        [plotOptions]="stackChart().plotOptions"
-        [dataLabels]="stackChart().dataLabels"
-        [grid]="stackChart().grid"
-        [xaxis]="stackChart().xaxis"
-        [yaxis]="stackChart().yaxis"
-        [tooltip]="stackChart().tooltip"
-        [colors]="stackChart().colors">
-      </apx-chart>
-    </article>
-
-    <article class="panel surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.recentActivityTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.recentActivitySubtitle' | t }}</p>
-        </div>
-      </div>
-
-      <ul class="activity-list">
-        @for (activity of analytics.recentActivity; track activity.id) {
-          <li>
-            <p class="activity-title">{{ activityTitle(activity.id) }}</p>
-            <p class="activity-detail">{{ activityDetail(activity.id) }}</p>
-            <p class="activity-time">{{ activity.occurredAt | date: 'MMM d, y · HH:mm' : '' : locale() }}</p>
-          </li>
-        }
-      </ul>
-    </article>
-
-    <article class="panel surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.upcomingActionsTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.upcomingActionsSubtitle' | t }}</p>
-        </div>
-      </div>
-
-      <ul class="actions-list">
-        @for (action of nextActions; track action.id) {
-          <li>
-            <div>
-              <p class="action-title">{{ actionTitle(action.id) }}</p>
-              <p class="action-company">{{ action.company }}</p>
-            </div>
-            <div class="action-meta">
-              <span class="chip" [ngClass]="priorityClass(action.priority)">{{ priorityLabel(action.priority) }}</span>
-              <span class="due-date">{{ action.dueDate | date: 'MMM d' : '' : locale() }}</span>
-            </div>
-          </li>
-        }
-      </ul>
-    </article>
-
-    <article class="panel panel-wide surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.recentVacanciesTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.recentVacanciesSubtitle' | t }}</p>
-        </div>
-      </div>
-
-      <div class="table-like" role="table" [attr.aria-label]="'dashboard.table.recentVacanciesAria' | t">
-        <div class="table-head" role="row">
-          <span>{{ 'dashboard.table.company' | t }}</span>
-          <span>{{ 'dashboard.table.role' | t }}</span>
-          <span>{{ 'dashboard.table.status' | t }}</span>
-          <span>{{ 'dashboard.table.priority' | t }}</span>
-          <span>{{ 'dashboard.table.updated' | t }}</span>
-        </div>
-
-        @for (vacancy of recentVacancies; track vacancy.id) {
-          <div class="table-row" role="row">
-            <span>{{ vacancy.company }}</span>
-            <span>{{ vacancy.role }}</span>
-            <span class="chip" [ngClass]="statusClass(vacancy.status)">{{ statusLabel(vacancy.status) }}</span>
-            <span class="chip" [ngClass]="priorityClass(vacancy.priority)">{{ priorityLabel(vacancy.priority) }}</span>
-            <span>{{ vacancy.updatedAt | date: 'MMM d, HH:mm' : '' : locale() }}</span>
+      <div class="chart-host">
+        <apx-chart
+          [series]="stackChart().series"
+          [chart]="stackChart().chart"
+          [plotOptions]="stackChart().plotOptions"
+          [dataLabels]="stackChart().dataLabels"
+          [grid]="stackChart().grid"
+          [xaxis]="stackChart().xaxis"
+          [yaxis]="stackChart().yaxis"
+          [tooltip]="stackChart().tooltip"
+          [colors]="stackChart().colors">
+        </apx-chart>
+        @if (isChartLoading('stack')) {
+          <div class="chart-loader-overlay">
+            <span class="chart-spinner" aria-hidden="true"></span>
           </div>
         }
       </div>
     </article>
 
-    <article class="panel surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.topCompanyInteractionsTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.topCompanyInteractionsSubtitle' | t }}</p>
+    @defer (on idle) {
+      <article class="panel surface-card">
+        <div class="panel-header">
+          <div>
+            <h3>{{ 'dashboard.section.recentActivityTitle' | t }}</h3>
+            <p>{{ 'dashboard.section.recentActivitySubtitle' | t }}</p>
+          </div>
         </div>
-      </div>
 
-      <ul class="companies-list">
-        @for (company of topCompanies; track company.company) {
-          <li>
-            <div>
-              <p class="company-name">{{ company.company }}</p>
-              <p class="company-meta">
-                {{ statusLabel(company.currentStatus) }} · {{ 'dashboard.lastContact' | t }}
-                {{ company.lastContactAt | date: 'MMM d' : '' : locale() }}
-              </p>
+        <ul class="activity-list">
+          @for (activity of analytics.recentActivity; track activity.id) {
+            <li>
+              <p class="activity-title">{{ activityTitle(activity.id) }}</p>
+              <p class="activity-detail">{{ activityDetail(activity.id) }}</p>
+              <p class="activity-time">{{ activity.occurredAt | date: 'MMM d, y · HH:mm' : '' : locale() }}</p>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="panel surface-card">
+        <div class="panel-header">
+          <div>
+            <h3>{{ 'dashboard.section.upcomingActionsTitle' | t }}</h3>
+            <p>{{ 'dashboard.section.upcomingActionsSubtitle' | t }}</p>
+          </div>
+        </div>
+
+        <ul class="actions-list">
+          @for (action of nextActions; track action.id) {
+            <li>
+              <div>
+                <p class="action-title">{{ actionTitle(action.id) }}</p>
+                <p class="action-company">{{ action.company }}</p>
+              </div>
+              <div class="action-meta">
+                <span class="chip" [ngClass]="priorityClass(action.priority)">{{ priorityLabel(action.priority) }}</span>
+                <span class="due-date">{{ action.dueDate | date: 'MMM d' : '' : locale() }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="panel surface-card">
+        <div class="panel-header">
+          <div>
+            <h3>{{ 'dashboard.section.topCompanyInteractionsTitle' | t }}</h3>
+            <p>{{ 'dashboard.section.topCompanyInteractionsSubtitle' | t }}</p>
+          </div>
+        </div>
+
+        <ul class="companies-list">
+          @for (company of topCompanies; track company.company) {
+            <li>
+              <div>
+                <p class="company-name">{{ company.company }}</p>
+                <p class="company-meta">
+                  {{ statusLabel(company.currentStatus) }} · {{ 'dashboard.lastContact' | t }}
+                  {{ company.lastContactAt | date: 'MMM d' : '' : locale() }}
+                </p>
+              </div>
+              <span class="touches">{{ company.touches }} {{ 'dashboard.touches' | t }}</span>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="panel panel-full surface-card">
+        <div class="panel-header">
+          <div>
+            <h3>{{ 'dashboard.section.recentVacanciesTitle' | t }}</h3>
+            <p>{{ 'dashboard.section.recentVacanciesSubtitle' | t }}</p>
+          </div>
+        </div>
+
+        @defer (on idle) {
+          <div class="table-like" role="table" [attr.aria-label]="'dashboard.table.recentVacanciesAria' | t">
+            <div class="table-head" role="row">
+              <span>{{ 'dashboard.table.company' | t }}</span>
+              <span>{{ 'dashboard.table.role' | t }}</span>
+              <span>{{ 'dashboard.table.status' | t }}</span>
+              <span>{{ 'dashboard.table.priority' | t }}</span>
+              <span>{{ 'dashboard.table.updated' | t }}</span>
             </div>
-            <span class="touches">{{ company.touches }} {{ 'dashboard.touches' | t }}</span>
-          </li>
+
+            @for (vacancy of recentVacancies; track vacancy.id) {
+              <div class="table-row" role="row">
+                <span>{{ vacancy.company }}</span>
+                <span>{{ vacancy.role }}</span>
+                <span class="chip" [ngClass]="statusClass(vacancy.status)">{{ statusLabel(vacancy.status) }}</span>
+                <span class="chip" [ngClass]="priorityClass(vacancy.priority)">{{ priorityLabel(vacancy.priority) }}</span>
+                <span>{{ vacancy.updatedAt | date: 'MMM d, HH:mm' : '' : locale() }}</span>
+              </div>
+            }
+          </div>
+        } @placeholder {
+          <div class="panel-loader-overlay">
+            <span class="chart-spinner" aria-hidden="true"></span>
+          </div>
         }
-      </ul>
-    </article>
+      </article>
 
-    <article class="panel surface-card progress-panel">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.personalProgressTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.personalProgressSubtitle' | t }}</p>
+    } @placeholder {
+      <article class="panel surface-card panel-placeholder">
+        <div class="panel-loader-overlay">
+          <span class="chart-spinner" aria-hidden="true"></span>
         </div>
-        <p class="progress-value">{{ globalProgress() }}%</p>
-      </div>
-
-      <mat-progress-bar mode="determinate" [value]="globalProgress()"></mat-progress-bar>
-
-      <div class="goal-breakdown">
-        <div>
-          <p class="goal-label">{{ 'dashboard.goal.applications' | t }}</p>
-          <p class="goal-value">{{ progress.applicationsDone }} / {{ progress.applicationsGoal }}</p>
+      </article>
+      <article class="panel surface-card panel-placeholder">
+        <div class="panel-loader-overlay">
+          <span class="chart-spinner" aria-hidden="true"></span>
         </div>
-        <div>
-          <p class="goal-label">{{ 'dashboard.goal.interviews' | t }}</p>
-          <p class="goal-value">{{ progress.interviewsDone }} / {{ progress.interviewsGoal }}</p>
+      </article>
+      <article class="panel surface-card panel-placeholder">
+        <div class="panel-loader-overlay">
+          <span class="chart-spinner" aria-hidden="true"></span>
         </div>
-        <div>
-          <p class="goal-label">{{ 'dashboard.goal.followUps' | t }}</p>
-          <p class="goal-value">{{ progress.followUpsDone }} / {{ progress.followUpsGoal }}</p>
+      </article>
+      <article class="panel panel-full surface-card panel-placeholder">
+        <div class="panel-loader-overlay">
+          <span class="chart-spinner" aria-hidden="true"></span>
         </div>
-      </div>
-    </article>
+      </article>
+    }
   </section>
 </section>
