@@ -46,4 +46,23 @@ describe('AuthService', () => {
     expect(sessionStorage.getItem('jvo.auth.session')).toBeTruthy();
     expect(localStorage.getItem('jvo.auth.session')).toBeNull();
   });
+
+  it('should register and authenticate a local user', () => {
+    const registerResult = service.register({
+      name: 'Test User',
+      email: 'test.user@local.dev',
+      password: 'StrongPass#2026'
+    });
+
+    expect(registerResult.success).toBeTrue();
+
+    const loginResult = service.login({
+      username: 'test.user@local.dev',
+      password: 'StrongPass#2026'
+    });
+
+    expect(loginResult.success).toBeTrue();
+    expect(service.getSession()?.isDemo).toBeFalse();
+    expect(service.getSession()?.email).toBe('test.user@local.dev');
+  });
 });

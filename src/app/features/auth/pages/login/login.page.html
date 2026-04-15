@@ -48,7 +48,9 @@
 
       <div class="form-meta">
         <mat-checkbox formControlName="rememberSession">{{ 'auth.login.keepSignedIn' | t }}</mat-checkbox>
-        
+        <button type="button" class="demo-link" (click)="fillDemoCredentials()">
+          {{ 'auth.login.demoCredentials' | t }}
+        </button>
       </div>
 
       @if (errorMessage(); as message) {
@@ -63,6 +65,8 @@
           {{ 'auth.login.signIn' | t }}
         }
       </button>
+
+      <a class="register-link" routerLink="/auth/register">{{ 'auth.login.createAccount' | t }}</a>
     </form>
   </article>
 </section>

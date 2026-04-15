@@ -1,20 +1,18 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 import { Vacancy } from '../../../core/models/vacancy.model';
 import { StorageService } from '../../../core/services/storage.service';
-import { VACANCY_REPOSITORY } from '../../../core/services/vacancy-repository.token';
-import { inject } from '@angular/core';
+import { SEED_FLAG_KEY, VACANCIES_BY_USER_STORAGE_KEY } from './vacancy-storage.constants';
 
-const SEED_FLAG_KEY = 'jvo.vacancies.seeded.v1';
+const DEMO_USER_ID = environment.auth.demoUser.username.trim().toLowerCase();
 
 @Injectable({
   providedIn: 'root'
 })
 export class VacancySeedService {
-  private readonly vacancyRepository = inject(VACANCY_REPOSITORY);
-
   constructor(
     private readonly httpClient: HttpClient,
     private readonly storageService: StorageService
@@ -24,7 +22,8 @@ export class VacancySeedService {
     try {
       const isSeedCompleted = this.storageService.getItem<boolean>(SEED_FLAG_KEY) ?? false;
 
-      if (isSeedCompleted && this.vacancyRepository.count() > 0) {
+      const vacanciesByUser = this.storageService.getItem<Record<string, Vacancy[]>>(VACANCIES_BY_USER_STORAGE_KEY) ?? {};
+      if (isSeedCompleted && (vacanciesByUser[DEMO_USER_ID]?.length ?? 0) > 0) {
         return;
       }
 
@@ -33,8 +32,8 @@ export class VacancySeedService {
       );
 
       const normalizedVacancies = seedVacancies.map((vacancy) => this.ensureFakeMarker(vacancy));
-
-      this.vacancyRepository.replaceAll(normalizedVacancies);
+      vacanciesByUser[DEMO_USER_ID] = normalizedVacancies;
+      this.storageService.setItem(VACANCIES_BY_USER_STORAGE_KEY, vacanciesByUser);
       this.storageService.setItem(SEED_FLAG_KEY, true);
     } catch (error) {
       console.error('Vacancy seed initialization failed. App will continue without seeding.', error);

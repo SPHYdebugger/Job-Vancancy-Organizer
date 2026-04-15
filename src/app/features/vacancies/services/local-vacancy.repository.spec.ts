@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 
+import { AuthService } from '../../../core/auth/auth.service';
+import { environment } from '../../../../environments/environment';
 import { StorageService } from '../../../core/services/storage.service';
 import { Vacancy } from '../../../core/models/vacancy.model';
 import { LocalVacancyRepository } from './local-vacancy.repository';
 
 describe('LocalVacancyRepository', () => {
   let repository: LocalVacancyRepository;
+  let authService: AuthService;
 
   const fakeVacancy: Vacancy = {
     id: 'vac-test-001',
@@ -47,7 +50,13 @@ describe('LocalVacancyRepository', () => {
     sessionStorage.clear();
 
     TestBed.configureTestingModule({
-      providers: [StorageService, LocalVacancyRepository]
+      providers: [StorageService, AuthService, LocalVacancyRepository]
+    });
+
+    authService = TestBed.inject(AuthService);
+    authService.login({
+      username: environment.auth.demoUser.username,
+      password: environment.auth.demoUser.password
     });
 
     repository = TestBed.inject(LocalVacancyRepository);

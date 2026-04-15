@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,6 +22,7 @@ import { environment } from '../../../../../environments/environment';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterLink,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -40,9 +42,9 @@ export class LoginPageComponent {
   protected readonly isSubmitting = signal(false);
   protected readonly submitted = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly hidePassword = signal(true);
   protected readonly demoUsername = environment.auth.demoUser.username;
   protected readonly demoPassword = environment.auth.demoUser.password;
-  protected readonly hidePassword = signal(true);
 
   protected readonly loginForm = this.formBuilder.nonNullable.group({
     username: ['', [Validators.required, Validators.minLength(4)]],
@@ -93,16 +95,17 @@ export class LoginPageComponent {
     void this.router.navigateByUrl(destination);
   }
 
+  public togglePasswordVisibility(): void {
+    this.hidePassword.update((value) => !value);
+  }
+
   public fillDemoCredentials(): void {
     this.loginForm.patchValue({
       username: this.demoUsername,
       password: this.demoPassword
     });
+    this.hidePassword.set(true);
     this.errorMessage.set(null);
-  }
-
-  public togglePasswordVisibility(): void {
-    this.hidePassword.update((value) => !value);
   }
 
   protected shouldShowError(controlName: 'username' | 'password'): boolean {

@@ -6,8 +6,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import {
   CompanyResponseState,
@@ -23,6 +25,7 @@ import {
   responseToTranslationKey,
   statusToTranslationKey
 } from '../../../../shared/utils/label-mappers';
+import { DemoRestrictionDialogComponent } from '../../../../shared/ui/demo-restriction-dialog/demo-restriction-dialog.component';
 import { VacancyExcelImportService } from '../../services/vacancy-excel-import.service';
 import { VacancyService } from '../../services/vacancy.service';
 
@@ -37,6 +40,7 @@ import { VacancyService } from '../../services/vacancy.service';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatDialogModule,
     MatSnackBarModule,
     TranslatePipe
   ],
@@ -51,7 +55,9 @@ export class VacancyFormPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly i18nService = inject(I18nService);
+  private readonly authService = inject(AuthService);
   private readonly vacancyExcelImportService = inject(VacancyExcelImportService);
   private readonly vacancyService = inject(VacancyService);
 
@@ -113,10 +119,19 @@ export class VacancyFormPageComponent {
   constructor() {
     if (this.editingVacancy) {
       this.patchForm(this.editingVacancy);
+      return;
+    }
+
+    if (this.authService.isDemoSession()) {
+      this.openDemoRestrictionDialog();
     }
   }
 
   protected openExcelImport(): void {
+    if (this.shouldBlockDemoActions()) {
+      return;
+    }
+
     this.excelFileInput?.nativeElement.click();
   }
 
@@ -160,6 +175,10 @@ export class VacancyFormPageComponent {
   }
 
   protected save(): void {
+    if (this.shouldBlockDemoActions()) {
+      return;
+    }
+
     if (this.vacancyForm.invalid) {
       this.vacancyForm.markAllAsTouched();
       return;
@@ -284,6 +303,34 @@ export class VacancyFormPageComponent {
       notes: vacancy.notes,
       hrObservations: vacancy.hrObservations,
       tags: vacancy.tags.join(', ')
+    });
+  }
+
+  private shouldBlockDemoActions(): boolean {
+    if (!this.authService.isDemoSession()) {
+      return false;
+    }
+
+    this.openDemoRestrictionDialog();
+    return true;
+  }
+
+  private openDemoRestrictionDialog(): void {
+    const dialogRef = this.dialog.open(DemoRestrictionDialogComponent, {
+      maxWidth: '460px',
+      data: {
+        titleKey: 'vacancies.demoRestriction.title',
+        messageKey: 'vacancies.demoRestriction.message'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((shouldRegister: boolean) => {
+      if (!shouldRegister) {
+        return;
+      }
+
+      this.authService.logout();
+      void this.router.navigate(['/auth/register']);
     });
   }
 }

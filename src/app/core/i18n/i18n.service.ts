@@ -15,6 +15,13 @@ export class I18nService {
   public readonly language = this.languageSignal.asReadonly();
   public readonly locale = computed(() => (this.language() === 'es' ? 'es-ES' : 'en-US'));
 
+  constructor() {
+    // Persist the detected language on first access so subsequent sessions keep the last used value.
+    if (!localStorage.getItem(LANGUAGE_STORAGE_KEY)) {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, this.language());
+    }
+  }
+
   public setLanguage(language: AppLanguage): void {
     this.languageSignal.set(language);
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);

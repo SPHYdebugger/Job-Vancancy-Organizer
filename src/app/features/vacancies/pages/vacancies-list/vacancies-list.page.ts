@@ -131,6 +131,7 @@ export class VacanciesListPageComponent {
     this.applyFilters(this.vacancies(), this.normalizeFilters(this.filters()))
   );
   protected readonly totalVacancies = computed(() => this.vacancies().length);
+  protected readonly hasAnyVacancies = computed(() => this.totalVacancies() > 0);
   protected readonly filteredCount = computed(() => this.filteredVacancies().length);
 
   protected readonly pageSize = computed(() => this.normalizeFilters(this.filters()).pageSize || 8);

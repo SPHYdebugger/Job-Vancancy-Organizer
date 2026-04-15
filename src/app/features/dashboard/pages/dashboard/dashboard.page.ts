@@ -1,5 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { animate, query, stagger, style, transition, trigger } from '@angular/animations';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -26,6 +27,7 @@ import { TranslationKey } from '../../../../core/i18n/translations';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { dashboardStatusToTranslationKey } from '../../../../shared/utils/label-mappers';
 import { DashboardAnalyticsService } from '../../services/dashboard-analytics.service';
+import { VacancyService } from '../../../vacancies/services/vacancy.service';
 import {
   CompanyInteraction,
   DashboardAnalytics,
@@ -114,14 +116,17 @@ type ChartKey = 'applications' | 'status' | 'modality' | 'stack';
 })
 export class DashboardPageComponent {
   private readonly analyticsService = inject(DashboardAnalyticsService);
+  private readonly vacancyService = inject(VacancyService);
   private readonly i18nService = inject(I18nService);
   private readonly loaderMinDurationMs = 120;
 
-  protected readonly analytics: DashboardAnalytics = this.analyticsService.getAnalytics();
-  protected readonly kpiMetrics: KpiMetric[] = this.analytics.metrics;
-  protected readonly nextActions: NextAction[] = this.analytics.nextActions;
-  protected readonly recentVacancies: RecentVacancy[] = this.analytics.recentVacancies;
-  protected readonly topCompanies: CompanyInteraction[] = this.analytics.topCompanies;
+  private readonly vacancies = toSignal(this.vacancyService.watchAll(), { initialValue: [] });
+  protected readonly analytics = computed<DashboardAnalytics>(() => this.analyticsService.buildAnalytics(this.vacancies()));
+  protected readonly hasData = computed(() => this.vacancies().length > 0);
+  protected readonly kpiMetrics = computed<KpiMetric[]>(() => this.analytics().metrics);
+  protected readonly nextActions = computed<NextAction[]>(() => this.analytics().nextActions);
+  protected readonly recentVacancies = computed<RecentVacancy[]>(() => this.analytics().recentVacancies);
+  protected readonly topCompanies = computed<CompanyInteraction[]>(() => this.analytics().topCompanies);
   protected readonly chartLoadingState = signal<Record<ChartKey, boolean>>({
     applications: true,
     status: true,
@@ -136,15 +141,15 @@ export class DashboardPageComponent {
   });
   protected readonly statusChart = computed(() => {
     this.i18nService.language();
-    return this.buildStatusDonutChart(this.analytics.statusDistribution);
+    return this.buildStatusDonutChart(this.analytics().statusDistribution);
   });
   protected readonly modalityChart = computed(() => {
     this.i18nService.language();
-    return this.buildModalityDonutChart(this.analytics.modalityDistribution);
+    return this.buildModalityDonutChart(this.analytics().modalityDistribution);
   });
   protected readonly stackChart = computed(() => {
     this.i18nService.language();
-    return this.buildStackBarChart(this.analytics.stackBreakdown);
+    return this.buildStackBarChart(this.analytics().stackBreakdown);
   });
 
   protected isChartLoading(chart: ChartKey): boolean {
@@ -158,6 +163,10 @@ export class DashboardPageComponent {
   }
 
   protected metricTrendClass(metric: KpiMetric): string {
+    if (!this.hasData()) {
+      return 'trend-no-data';
+    }
+
     if (metric.trendDirection === 'up') {
       return 'trend-up';
     }
@@ -192,6 +201,10 @@ export class DashboardPageComponent {
   }
 
   protected metricTrendLabel(metricId: string): string {
+    if (!this.hasData()) {
+      return this.i18nService.translate('dashboard.noDataYet');
+    }
+
     const map: Record<string, TranslationKey> = {
       'total-vacancies': 'dashboard.kpi.totalVacanciesTrend',
       'cv-sent': 'dashboard.kpi.cvSentTrend',
@@ -203,18 +216,6 @@ export class DashboardPageComponent {
       followups: 'dashboard.kpi.pendingFollowUpsTrend'
     };
     return this.i18nService.translate(map[metricId] ?? 'dashboard.kpi.totalVacanciesTrend');
-  }
-
-  protected activityTitle(activityId: string): string {
-    return this.i18nService.translate(`dashboard.activity.${activityId}.title` as TranslationKey);
-  }
-
-  protected activityDetail(activityId: string): string {
-    return this.i18nService.translate(`dashboard.activity.${activityId}.detail` as TranslationKey);
-  }
-
-  protected actionTitle(actionId: string): string {
-    return this.i18nService.translate(`dashboard.action.${actionId}` as TranslationKey);
   }
 
   protected statusLabel(status: string): string {
@@ -235,7 +236,7 @@ export class DashboardPageComponent {
       series: [
         {
           name: this.i18nService.translate('dashboard.applications'),
-          data: this.analytics.monthlyApplications.map((item) => item.total)
+          data: this.analytics().monthlyApplications.map((item) => item.total)
         }
       ],
       chart: {
@@ -269,7 +270,7 @@ export class DashboardPageComponent {
         padding: { left: 6, right: 10 }
       },
       xaxis: {
-        categories: this.analytics.monthlyApplications.map((item, index, items) =>
+        categories: this.analytics().monthlyApplications.map((item, index, items) =>
           this.translateMonthWithYear(item.month, index, items.length)
         ),
         labels: {

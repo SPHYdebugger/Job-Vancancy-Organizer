@@ -1,0 +1,98 @@
+<section class="register-page">
+  <article class="register-card fade-in">
+    <section class="register-intro">
+      <img class="intro-logo" src="/assets/images/JVO_logo.png" alt="JVO logo" />
+      <p class="description">{{ 'auth.register.description' | t }}</p>
+    </section>
+
+    <form class="register-form" [formGroup]="registerForm" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'auth.register.name' | t }}</mat-label>
+        <input matInput formControlName="name" autocomplete="name" />
+        @if (shouldShowError('name')) {
+          <mat-error>
+            @if (nameControl.hasError('required')) {
+              {{ 'auth.register.nameRequired' | t }}
+            } @else if (nameControl.hasError('minlength')) {
+              {{ 'auth.register.nameMinLength' | t }}
+            }
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'auth.register.email' | t }}</mat-label>
+        <input matInput formControlName="email" autocomplete="email" />
+        @if (shouldShowError('email')) {
+          <mat-error>
+            @if (emailControl.hasError('required')) {
+              {{ 'auth.register.emailRequired' | t }}
+            } @else if (emailControl.hasError('email')) {
+              {{ 'auth.register.emailInvalid' | t }}
+            }
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'auth.register.password' | t }}</mat-label>
+        <input
+          matInput
+          [type]="hidePassword() ? 'password' : 'text'"
+          formControlName="password"
+          autocomplete="new-password" />
+        <button mat-button matSuffix type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+          {{ hidePassword() ? ('auth.login.show' | t) : ('auth.login.hide' | t) }}
+        </button>
+        @if (shouldShowError('password')) {
+          <mat-error>
+            @if (passwordControl.hasError('required')) {
+              {{ 'auth.login.passwordRequired' | t }}
+            } @else if (passwordControl.hasError('minlength')) {
+              {{ 'auth.login.passwordMinLength' | t }}
+            }
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'auth.register.confirmPassword' | t }}</mat-label>
+        <input
+          matInput
+          [type]="hideConfirmPassword() ? 'password' : 'text'"
+          formControlName="confirmPassword"
+          autocomplete="new-password" />
+        <button
+          mat-button
+          matSuffix
+          type="button"
+          class="toggle-password"
+          (click)="toggleConfirmPasswordVisibility()">
+          {{ hideConfirmPassword() ? ('auth.login.show' | t) : ('auth.login.hide' | t) }}
+        </button>
+        @if (shouldShowError('confirmPassword')) {
+          <mat-error>
+            @if (confirmPasswordControl.hasError('required')) {
+              {{ 'auth.register.confirmPasswordRequired' | t }}
+            } @else if (confirmPasswordControl.hasError('minlength')) {
+              {{ 'auth.login.passwordMinLength' | t }}
+            }
+          </mat-error>
+        } @else if (hasPasswordMismatch()) {
+          <mat-error>{{ 'auth.register.passwordMismatch' | t }}</mat-error>
+        }
+      </mat-form-field>
+
+      @if (errorMessage(); as message) {
+        <p class="error-banner">{{ message }}</p>
+      }
+
+      <button mat-flat-button type="submit" class="submit-button" [disabled]="registerForm.invalid || isSubmitting()">
+        {{ isSubmitting() ? ('auth.register.creating' | t) : ('auth.register.createAccount' | t) }}
+      </button>
+
+      <a class="login-link" routerLink="/auth/login">{{ 'auth.register.backToSignIn' | t }}</a>
+    </form>
+  </article>
+</section>
+

@@ -82,9 +82,11 @@
       <input type="date" formControlName="toDate" />
     </label>
 
-    <div class="filter-actions">
-      <button type="button" mat-stroked-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
-    </div>
+    @if (hasAnyVacancies()) {
+      <div class="filter-actions">
+        <button type="button" mat-stroked-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
+      </div>
+    }
   </form>
 
   @if (paginatedVacancies().length > 0) {
@@ -211,9 +213,13 @@
     </footer>
   } @else {
     <section class="empty-state surface-card">
-      <h2>{{ 'vacancies.list.emptyTitle' | t }}</h2>
-      <p>{{ 'vacancies.list.emptyDescription' | t }}</p>
-      <button type="button" mat-flat-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
+      @if (!hasAnyVacancies()) {
+        <h2 style="color: red;">{{ 'vacancies.list.noDataTitle' | t }}</h2>
+      } @else {
+        <h2>{{ 'vacancies.list.emptyTitle' | t }}</h2>
+        <p>{{ 'vacancies.list.emptyDescription' | t }}</p>
+        <button type="button" mat-flat-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
+      }
     </section>
   }
 </section>

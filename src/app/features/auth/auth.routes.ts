@@ -9,6 +9,11 @@ export const AUTH_ROUTES: Routes = [
     loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPageComponent)
   },
   {
+    path: 'register',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/register/register.page').then((m) => m.RegisterPageComponent)
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: 'login'

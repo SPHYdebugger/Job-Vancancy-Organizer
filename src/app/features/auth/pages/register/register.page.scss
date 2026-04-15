@@ -1,11 +1,11 @@
-.login-page {
+.register-page {
   min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 2rem;
 }
 
-.login-card {
+.register-card {
   width: min(980px, 100%);
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
@@ -19,7 +19,7 @@
   backdrop-filter: blur(12px);
 }
 
-.login-intro {
+.register-intro {
   border-radius: calc(var(--radius-lg) - 8px);
   padding: 1.7rem;
   background:
@@ -28,27 +28,8 @@
   color: #fff;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-
-  h1 {
-    margin: 0.3rem 0 0.8rem;
-    font-size: 2rem;
-    color: #fff;
-  }
-
-  .eyebrow {
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.68);
-    font-weight: 700;
-  }
-
-  .description {
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.8);
-  }
+  justify-content: center;
+  gap: 1rem;
 }
 
 .intro-logo {
@@ -56,36 +37,17 @@
   height: auto;
   object-fit: contain;
   display: block;
-  align-self: center;     // centers inside flex column (.login-intro)
+  align-self: center;
   margin: 0 auto 0.4rem;
   filter: drop-shadow(0 8px 24px rgba(15, 23, 42, 0.32));
 }
 
-.credential-hint {
-  margin-top: 1.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.12);
-  padding: 0.9rem;
-  display: grid;
-  gap: 0.35rem;
-
-  p {
-    color: rgba(255, 255, 255, 0.78);
-    font-size: 0.74rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-weight: 700;
-  }
-
-  code {
-    color: #f8fafc;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
+.description {
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.84);
 }
 
-.login-form {
+.register-form {
   display: grid;
   align-content: start;
   gap: 0.35rem;
@@ -95,29 +57,6 @@
 .toggle-password {
   --mat-text-button-horizontal-padding: 0.5rem;
   min-width: auto;
-}
-
-.form-meta {
-  margin-top: 0.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.demo-link {
-  border: 0;
-  background: transparent;
-  color: #1e3a8a;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 0.92rem;
-  padding: 0;
-  text-align: right;
-
-  &:hover {
-    text-decoration: underline;
-  }
 }
 
 .error-banner {
@@ -138,7 +77,7 @@
   font-weight: 700;
 }
 
-.register-link {
+.login-link {
   margin-top: 0.65rem;
   display: inline-flex;
   justify-content: center;
@@ -157,24 +96,18 @@
   }
 }
 
-mat-spinner {
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 0.5rem;
-}
-
 @media (max-width: 920px) {
-  .login-page {
+  .register-page {
     padding: 1rem;
   }
 
-  .login-card {
+  .register-card {
     grid-template-columns: 1fr;
     gap: 1rem;
     padding: 1rem;
   }
 
-  .login-intro {
+  .register-intro {
     padding: 1.2rem;
   }
 
@@ -182,3 +115,4 @@ mat-spinner {
     width: min(180px, 60vw);
   }
 }
+
