@@ -1,22 +1,25 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, NavigationEnd, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs/operators';
+import { interval } from 'rxjs';
+import { startWith } from 'rxjs/operators';
 import { animate, style, transition, trigger } from '@angular/animations';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface NavigationItem {
-  label: string;
+  labelKey: 'layout.nav.dashboard' | 'layout.nav.addVacancy' | 'layout.nav.appliedVacancies';
   route: string;
-  description: string;
+  descriptionKey: 'layout.nav.dashboardDesc' | 'layout.nav.addVacancyDesc' | 'layout.nav.appliedVacanciesDesc';
 }
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, TranslatePipe],
   templateUrl: './app-shell.component.html',
   styleUrl: './app-shell.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,48 +35,53 @@ interface NavigationItem {
 export class AppShellComponent {
   private readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly i18nService = inject(I18nService);
   protected readonly router = inject(Router);
 
   protected readonly isSidebarOpen = signal(false);
-  protected readonly pageTitle = signal('Dashboard');
-  protected readonly pageDescription = signal(
-    'Review your job search performance and stay on top of your next actions.'
+  protected readonly selectedLanguage = this.i18nService.language;
+  protected readonly currentDateTime = signal(this.formatCurrentDateTime(new Date()));
+  protected readonly languageToggleFlag = computed(() => (this.selectedLanguage() === 'es' ? '🇬🇧' : '🇪🇸'));
+  protected readonly languageToggleAria = computed(() =>
+    this.selectedLanguage() === 'es'
+      ? `${this.i18nService.translate('common.language')}: ${this.i18nService.translate('common.english')}`
+      : `${this.i18nService.translate('common.language')}: ${this.i18nService.translate('common.spanish')}`
   );
-  protected readonly todayLabel = new Intl.DateTimeFormat('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric'
-  }).format(new Date());
 
   protected readonly navigationItems: NavigationItem[] = [
     {
-      label: 'Dashboard',
+      labelKey: 'layout.nav.dashboard',
       route: '/app/dashboard',
-      description: 'KPIs, trends, and activity'
+      descriptionKey: 'layout.nav.dashboardDesc'
     },
     {
-      label: 'Add Vacancy',
+      labelKey: 'layout.nav.addVacancy',
       route: '/app/vacancies/new',
-      description: 'Create a new opportunity entry'
+      descriptionKey: 'layout.nav.addVacancyDesc'
     },
     {
-      label: 'Applied Vacancies',
+      labelKey: 'layout.nav.appliedVacancies',
       route: '/app/vacancies',
-      description: 'Browse and manage all applications'
+      descriptionKey: 'layout.nav.appliedVacanciesDesc'
     }
   ];
 
   constructor() {
-    this.syncPageMeta(this.router.url);
-
     this.router.events
       .pipe(
-        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        startWith(new NavigationEnd(0, this.router.url, this.router.url)),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((event) => {
-        this.syncPageMeta(event.urlAfterRedirects);
-        this.isSidebarOpen.set(false);
+        if (event instanceof NavigationEnd) {
+          this.isSidebarOpen.set(false);
+        }
+      });
+
+    interval(1000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.currentDateTime.set(this.formatCurrentDateTime(new Date()));
       });
   }
 
@@ -85,37 +93,55 @@ export class AppShellComponent {
     this.isSidebarOpen.set(false);
   }
 
+  public toggleLanguage(): void {
+    const nextLanguage = this.selectedLanguage() === 'es' ? 'en' : 'es';
+    this.i18nService.setLanguage(nextLanguage);
+    this.currentDateTime.set(this.formatCurrentDateTime(new Date()));
+  }
+
   public logout(): void {
     this.authService.logout();
     this.closeSidebar();
   }
 
-  private syncPageMeta(url: string): void {
-    if (url.startsWith('/app/vacancies/new')) {
-      this.pageTitle.set('Add Vacancy');
-      this.pageDescription.set('Capture a new role and define your tracking strategy from day one.');
-      return;
+  private formatCurrentDateTime(date: Date): string {
+    const language = this.selectedLanguage();
+    const locale = this.i18nService.locale();
+
+    const weekday = this.capitalizeFirstLetter(
+      new Intl.DateTimeFormat(locale, {
+        weekday: 'long'
+      }).format(date)
+    );
+
+    const month = this.capitalizeFirstLetter(
+      new Intl.DateTimeFormat(locale, {
+        month: 'short'
+      }).format(date).replace('.', '')
+    );
+
+    const day = new Intl.DateTimeFormat(locale, {
+      day: '2-digit'
+    }).format(date);
+
+    const time = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }).format(date);
+
+    if (language === 'es') {
+      return `${weekday}, ${day} ${month}, ${time}`;
     }
 
-    if (url.startsWith('/app/vacancies/') && url.endsWith('/edit')) {
-      this.pageTitle.set('Edit Vacancy');
-      this.pageDescription.set('Update key details, process stage, and follow-up actions.');
-      return;
+    return `${weekday}, ${month} ${day}, ${time}`;
+  }
+
+  private capitalizeFirstLetter(value: string): string {
+    if (!value) {
+      return value;
     }
 
-    if (url.startsWith('/app/vacancies/') && !url.endsWith('/edit')) {
-      this.pageTitle.set('Vacancy Detail');
-      this.pageDescription.set('Inspect application history, process status, and contact context.');
-      return;
-    }
-
-    if (url.startsWith('/app/vacancies')) {
-      this.pageTitle.set('Applied Vacancies');
-      this.pageDescription.set('Filter, sort, and manage all tracked opportunities.');
-      return;
-    }
-
-    this.pageTitle.set('Dashboard');
-    this.pageDescription.set('Review your job search performance and stay on top of your next actions.');
+    return value.charAt(0).toUpperCase() + value.slice(1);
   }
 }

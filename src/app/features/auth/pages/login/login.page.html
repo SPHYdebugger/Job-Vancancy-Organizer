@@ -4,7 +4,7 @@
       
       <img class="intro-logo" src="/assets/images/JVO_logo.png" alt="JVO logo" />
       <p class="description">
-        Sign in to manage your backend job applications with a structured, analytics-driven workflow.
+        {{ 'auth.login.description' | t }}
       </p>
 
       
@@ -12,42 +12,42 @@
 
     <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submit()">
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Username</mat-label>
+        <mat-label>{{ 'auth.login.username' | t }}</mat-label>
         <input matInput formControlName="username" autocomplete="username" />
         @if (shouldShowError('username')) {
           <mat-error>
             @if (usernameControl.hasError('required')) {
-              Username is required.
+              {{ 'auth.login.usernameRequired' | t }}
             } @else if (usernameControl.hasError('minlength')) {
-              Username must be at least 4 characters.
+              {{ 'auth.login.usernameMinLength' | t }}
             }
           </mat-error>
         }
       </mat-form-field>
 
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Password</mat-label>
+        <mat-label>{{ 'auth.login.password' | t }}</mat-label>
         <input
           matInput
           [type]="hidePassword() ? 'password' : 'text'"
           formControlName="password"
           autocomplete="current-password" />
         <button mat-button matSuffix type="button" class="toggle-password" (click)="togglePasswordVisibility()">
-          {{ hidePassword() ? 'Show' : 'Hide' }}
+          {{ hidePassword() ? ('auth.login.show' | t) : ('auth.login.hide' | t) }}
         </button>
         @if (shouldShowError('password')) {
           <mat-error>
             @if (passwordControl.hasError('required')) {
-              Password is required.
+              {{ 'auth.login.passwordRequired' | t }}
             } @else if (passwordControl.hasError('minlength')) {
-              Password must be at least 8 characters.
+              {{ 'auth.login.passwordMinLength' | t }}
             }
           </mat-error>
         }
       </mat-form-field>
 
       <div class="form-meta">
-        <mat-checkbox formControlName="rememberSession">Keep me signed in</mat-checkbox>
+        <mat-checkbox formControlName="rememberSession">{{ 'auth.login.keepSignedIn' | t }}</mat-checkbox>
         
       </div>
 
@@ -58,9 +58,9 @@
       <button mat-flat-button type="submit" class="submit-button" [disabled]="loginForm.invalid || isSubmitting()">
         @if (isSubmitting()) {
           <mat-spinner diameter="18"></mat-spinner>
-          Signing in...
+          {{ 'auth.login.signingIn' | t }}
         } @else {
-          Sign in
+          {{ 'auth.login.signIn' | t }}
         }
       </button>
     </form>

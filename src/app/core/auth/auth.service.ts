@@ -39,7 +39,7 @@ export class AuthService {
     if (username !== configuredDemoUser.username || password !== configuredDemoUser.password) {
       return {
         success: false,
-        message: 'Invalid credentials. Please check the demo account details and try again.'
+        messageKey: 'auth.invalidCredentials'
       };
     }
 

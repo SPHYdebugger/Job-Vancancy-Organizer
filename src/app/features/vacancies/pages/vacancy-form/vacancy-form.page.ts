@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import {
   CompanyResponseState,
   Vacancy,
@@ -15,6 +16,13 @@ import {
   VacancyStatus,
   WorkModality
 } from '../../../../core/models/vacancy.model';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import {
+  modalityToTranslationKey,
+  priorityToTranslationKey,
+  responseToTranslationKey,
+  statusToTranslationKey
+} from '../../../../shared/utils/label-mappers';
 import { VacancyExcelImportService } from '../../services/vacancy-excel-import.service';
 import { VacancyService } from '../../services/vacancy.service';
 
@@ -29,7 +37,8 @@ import { VacancyService } from '../../services/vacancy.service';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    TranslatePipe
   ],
   templateUrl: './vacancy-form.page.html',
   styleUrl: './vacancy-form.page.scss',
@@ -42,6 +51,7 @@ export class VacancyFormPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly i18nService = inject(I18nService);
   private readonly vacancyExcelImportService = inject(VacancyExcelImportService);
   private readonly vacancyService = inject(VacancyService);
 
@@ -128,8 +138,11 @@ export class VacancyFormPageComponent {
       }
 
       this.snackBar.open(
-        `Imported ${importResult.vacancies.length} vacancies from Excel (${importResult.skippedRows} skipped).`,
-        'Close',
+        this.i18nService.translate('vacancies.form.importSuccess', {
+          count: importResult.vacancies.length,
+          skipped: importResult.skippedRows
+        }),
+        this.i18nService.translate('common.close'),
         { duration: 4500 }
       );
 
@@ -137,7 +150,7 @@ export class VacancyFormPageComponent {
         void this.router.navigate(['/app/vacancies']);
       }
     } catch {
-      this.snackBar.open('Excel import failed. Please verify the file format.', 'Close', {
+      this.snackBar.open(this.i18nService.translate('vacancies.form.importFailed'), this.i18nService.translate('common.close'), {
         duration: 4500
       });
     } finally {
@@ -230,6 +243,22 @@ export class VacancyFormPageComponent {
 
     this.vacancyService.create(newVacancy);
     void this.router.navigate(['/app/vacancies', newVacancy.id]);
+  }
+
+  protected statusLabel(status: VacancyStatus): string {
+    return this.i18nService.translate(statusToTranslationKey(status));
+  }
+
+  protected priorityLabel(priority: VacancyPriority): string {
+    return this.i18nService.translate(priorityToTranslationKey(priority));
+  }
+
+  protected modalityLabel(modality: WorkModality): string {
+    return this.i18nService.translate(modalityToTranslationKey(modality));
+  }
+
+  protected responseLabel(response: CompanyResponseState): string {
+    return this.i18nService.translate(responseToTranslationKey(response));
   }
 
   private patchForm(vacancy: Vacancy): void {

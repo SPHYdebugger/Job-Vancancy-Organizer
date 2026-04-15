@@ -32,7 +32,7 @@ describe('AuthService', () => {
 
     expect(result.success).toBeFalse();
     expect(service.isAuthenticated()).toBeFalse();
-    expect(result.message).toBeTruthy();
+    expect(result.messageKey).toBeTruthy();
   });
 
   it('should keep session in sessionStorage when rememberSession is false', () => {

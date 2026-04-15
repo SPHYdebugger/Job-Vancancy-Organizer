@@ -11,7 +11,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { Vacancy } from '../../../../core/models/vacancy.model';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { modalityToTranslationKey, priorityToTranslationKey, statusToTranslationKey } from '../../../../shared/utils/label-mappers';
 import { VacancyService } from '../../services/vacancy.service';
 
 type SortOption =
@@ -59,7 +62,8 @@ interface VacancyFilters {
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    TranslatePipe
   ],
   templateUrl: './vacancies-list.page.html',
   styleUrl: './vacancies-list.page.scss',
@@ -69,6 +73,7 @@ export class VacanciesListPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly vacancyService = inject(VacancyService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly i18nService = inject(I18nService);
 
   private readonly priorityRanking = new Map([
     ['high', 3],
@@ -78,6 +83,7 @@ export class VacanciesListPageComponent {
 
   protected readonly currentPage = signal(0);
   protected readonly pageSizeOptions = [5, 8, 10, 15];
+  protected readonly locale = this.i18nService.locale;
 
   protected readonly filtersForm = this.formBuilder.nonNullable.group<VacancyFilters>({
     search: '',
@@ -163,14 +169,21 @@ export class VacanciesListPageComponent {
   }
 
   protected deleteVacancy(vacancy: Vacancy): void {
-    const shouldDelete = confirm(`Delete "${vacancy.company} - ${vacancy.position}"?`);
+    const shouldDelete = confirm(
+      this.i18nService.translate('vacancies.list.deleteConfirm', {
+        company: vacancy.company,
+        position: vacancy.position
+      })
+    );
 
     if (!shouldDelete) {
       return;
     }
 
     this.vacancyService.remove(vacancy.id);
-    this.snackBar.open('Vacancy deleted.', 'Close', { duration: 2500 });
+    this.snackBar.open(this.i18nService.translate('vacancies.list.deleted'), this.i18nService.translate('common.close'), {
+      duration: 2500
+    });
   }
 
   protected clearFilters(): void {
@@ -207,6 +220,18 @@ export class VacanciesListPageComponent {
 
   protected setPageSize(pageSize: number): void {
     this.filtersForm.patchValue({ pageSize });
+  }
+
+  public statusLabel(status: string): string {
+    return this.i18nService.translate(statusToTranslationKey(status as Vacancy['applicationStatus']));
+  }
+
+  public modalityLabel(modality: string): string {
+    return this.i18nService.translate(modalityToTranslationKey(modality as Vacancy['modality']));
+  }
+
+  public priorityLabel(priority: string): string {
+    return this.i18nService.translate(priorityToTranslationKey(priority as Vacancy['priority']));
   }
 
   protected previousPage(): void {

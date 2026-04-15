@@ -1,21 +1,21 @@
 <section class="vacancy-list-shell surface-card">
   <header>
     <div>
-      <h1>Applied Vacancies</h1>
-      <p>Advanced filtering, sorting, and pagination over your real data repository.</p>
+      <h1>{{ 'vacancies.list.title' | t }}</h1>
+      <p>{{ 'vacancies.list.subtitle' | t }}</p>
     </div>
   </header>
 
   <form class="filters-grid" [formGroup]="filtersForm">
     <mat-form-field appearance="outline">
-      <mat-label>Global search</mat-label>
-      <input matInput formControlName="search" placeholder="Company, role, stack, notes..." />
+      <mat-label>{{ 'vacancies.list.search' | t }}</mat-label>
+      <input matInput formControlName="search" [placeholder]="'vacancies.list.searchPlaceholder' | t" />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Company</mat-label>
+      <mat-label>{{ 'vacancies.list.company' | t }}</mat-label>
       <mat-select formControlName="company">
-        <mat-option value="all">All</mat-option>
+        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
         @for (company of companyOptions(); track company) {
           <mat-option [value]="company">{{ company }}</mat-option>
         }
@@ -23,39 +23,39 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Status</mat-label>
+      <mat-label>{{ 'vacancies.list.status' | t }}</mat-label>
       <mat-select formControlName="status">
-        <mat-option value="all">All</mat-option>
+        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
         @for (status of statusOptions(); track status) {
-          <mat-option [value]="status">{{ status }}</mat-option>
+          <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Modality</mat-label>
+      <mat-label>{{ 'vacancies.list.modality' | t }}</mat-label>
       <mat-select formControlName="modality">
-        <mat-option value="all">All</mat-option>
+        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
         @for (modality of modalityOptions(); track modality) {
-          <mat-option [value]="modality">{{ modality }}</mat-option>
+          <mat-option [value]="modality">{{ modalityLabel(modality) }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Priority</mat-label>
+      <mat-label>{{ 'vacancies.list.priority' | t }}</mat-label>
       <mat-select formControlName="priority">
-        <mat-option value="all">All</mat-option>
+        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
         @for (priority of priorityOptions(); track priority) {
-          <mat-option [value]="priority">{{ priority }}</mat-option>
+          <mat-option [value]="priority">{{ priorityLabel(priority) }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Stack</mat-label>
+      <mat-label>{{ 'vacancies.list.stack' | t }}</mat-label>
       <mat-select formControlName="stack">
-        <mat-option value="all">All</mat-option>
+        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
         @for (stack of stackOptions(); track stack) {
           <mat-option [value]="stack">{{ stack }}</mat-option>
         }
@@ -63,9 +63,9 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Headquarters</mat-label>
+      <mat-label>{{ 'vacancies.list.headquarters' | t }}</mat-label>
       <mat-select formControlName="headquarters">
-        <mat-option value="all">All</mat-option>
+        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
         @for (headquarters of headquartersOptions(); track headquarters) {
           <mat-option [value]="headquarters">{{ headquarters }}</mat-option>
         }
@@ -73,17 +73,17 @@
     </mat-form-field>
 
     <label>
-      From date
+      {{ 'vacancies.list.fromDate' | t }}
       <input type="date" formControlName="fromDate" />
     </label>
 
     <label>
-      To date
+      {{ 'vacancies.list.toDate' | t }}
       <input type="date" formControlName="toDate" />
     </label>
 
     <div class="filter-actions">
-      <button type="button" mat-stroked-button (click)="clearFilters()">Reset filters</button>
+      <button type="button" mat-stroked-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
     </div>
   </form>
 
@@ -91,11 +91,15 @@
     <section class="table-shell">
       <header class="table-header">
         <p class="total">
-          Showing <strong>{{ filteredCount() }}</strong> of <strong>{{ totalVacancies() }}</strong> vacancies.
+          {{ 'vacancies.list.showing' | t }}
+          <strong>{{ filteredCount() }}</strong>
+          {{ 'common.of' | t }}
+          <strong>{{ totalVacancies() }}</strong>
+          {{ 'vacancies.list.vacancies' | t }}.
         </p>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="page-size-field">
-          <mat-label>Results per page</mat-label>
+          <mat-label>{{ 'common.resultsPerPage' | t }}</mat-label>
           <mat-select [value]="pageSize()" (selectionChange)="setPageSize($event.value)">
             @for (option of pageSizeOptions; track option) {
               <mat-option [value]="option">{{ option }}</mat-option>
@@ -110,7 +114,7 @@
             <tr>
               <th>
                 <button type="button" class="sort-trigger" (click)="toggleColumnSort('company')">
-                  Company
+                  {{ 'vacancies.list.company' | t }}
                   <span class="sort-indicator" [class.active]="getColumnSortDirection('company')">
                     {{ getColumnSortDirection('company') === 'asc' ? '↑' : getColumnSortDirection('company') ===
                     'desc' ? '↓' : '↕' }}
@@ -119,7 +123,7 @@
               </th>
               <th>
                 <button type="button" class="sort-trigger" (click)="toggleColumnSort('position')">
-                  Position
+                  {{ 'vacancies.list.position' | t }}
                   <span class="sort-indicator" [class.active]="getColumnSortDirection('position')">
                     {{ getColumnSortDirection('position') === 'asc' ? '↑' : getColumnSortDirection('position') ===
                     'desc' ? '↓' : '↕' }}
@@ -128,7 +132,7 @@
               </th>
               <th>
                 <button type="button" class="sort-trigger" (click)="toggleColumnSort('status')">
-                  Status
+                  {{ 'vacancies.list.status' | t }}
                   <span class="sort-indicator" [class.active]="getColumnSortDirection('status')">
                     {{ getColumnSortDirection('status') === 'asc' ? '↑' : getColumnSortDirection('status') ===
                     'desc' ? '↓' : '↕' }}
@@ -137,7 +141,7 @@
               </th>
               <th>
                 <button type="button" class="sort-trigger" (click)="toggleColumnSort('modality')">
-                  Modality
+                  {{ 'vacancies.list.modality' | t }}
                   <span class="sort-indicator" [class.active]="getColumnSortDirection('modality')">
                     {{ getColumnSortDirection('modality') === 'asc' ? '↑' : getColumnSortDirection('modality') ===
                     'desc' ? '↓' : '↕' }}
@@ -146,7 +150,7 @@
               </th>
               <th>
                 <button type="button" class="sort-trigger" (click)="toggleColumnSort('application')">
-                  Application Date
+                  {{ 'vacancies.list.applicationDate' | t }}
                   <span class="sort-indicator" [class.active]="getColumnSortDirection('application')">
                     {{ getColumnSortDirection('application') === 'asc' ? '↑' : getColumnSortDirection('application')
                     === 'desc' ? '↓' : '↕' }}
@@ -155,7 +159,7 @@
               </th>
               <th>
                 <button type="button" class="sort-trigger" (click)="toggleColumnSort('priority')">
-                  Priority
+                  {{ 'vacancies.list.priority' | t }}
                   <span class="sort-indicator" [class.active]="getColumnSortDirection('priority')">
                     {{ getColumnSortDirection('priority') === 'asc' ? '↑' : getColumnSortDirection('priority') ===
                     'desc' ? '↓' : '↕' }}
@@ -164,14 +168,14 @@
               </th>
               <th>
                 <button type="button" class="sort-trigger" (click)="toggleColumnSort('updated')">
-                  Last Update
+                  {{ 'vacancies.list.lastUpdate' | t }}
                   <span class="sort-indicator" [class.active]="getColumnSortDirection('updated')">
                     {{ getColumnSortDirection('updated') === 'asc' ? '↑' : getColumnSortDirection('updated') ===
                     'desc' ? '↓' : '↕' }}
                   </span>
                 </button>
               </th>
-              <th class="actions-column">Actions</th>
+              <th class="actions-column">{{ 'vacancies.list.actions' | t }}</th>
             </tr>
           </thead>
           <tbody>
@@ -179,15 +183,15 @@
               <tr>
                 <td class="company-cell">{{ vacancy.company }}</td>
                 <td>{{ vacancy.position }}</td>
-                <td><span class="chip status">{{ vacancy.applicationStatus }}</span></td>
-                <td>{{ vacancy.modality }}</td>
-                <td>{{ vacancy.applicationDate || vacancy.createdAt | date: 'MMM d, y' }}</td>
-                <td><span class="chip priority">{{ vacancy.priority }}</span></td>
-                <td>{{ vacancy.lastUpdatedAt | date: 'MMM d, y' }}</td>
+                <td><span class="chip status">{{ statusLabel(vacancy.applicationStatus) }}</span></td>
+                <td>{{ modalityLabel(vacancy.modality) }}</td>
+                <td>{{ (vacancy.applicationDate || vacancy.createdAt) | date: 'MMM d, y' : '' : locale() }}</td>
+                <td><span class="chip priority">{{ priorityLabel(vacancy.priority) }}</span></td>
+                <td>{{ vacancy.lastUpdatedAt | date: 'MMM d, y' : '' : locale() }}</td>
                 <td class="actions-cell">
-                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id]">View</a>
-                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id, 'edit']">Edit</a>
-                  <button type="button" mat-button (click)="deleteVacancy(vacancy)">Delete</button>
+                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id]">{{ 'common.view' | t }}</a>
+                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id, 'edit']">{{ 'common.edit' | t }}</a>
+                  <button type="button" mat-button (click)="deleteVacancy(vacancy)">{{ 'common.delete' | t }}</button>
                 </td>
               </tr>
             }
@@ -198,18 +202,18 @@
 
     <footer class="pagination">
       <button type="button" mat-stroked-button (click)="previousPage()" [disabled]="currentPage() === 0">
-        Previous
+        {{ 'common.previous' | t }}
       </button>
-      <p>Page {{ pageDisplay() }}</p>
+      <p>{{ 'common.page' | t }} {{ pageDisplay() }}</p>
       <button type="button" mat-stroked-button (click)="nextPage()" [disabled]="currentPage() >= totalPages() - 1">
-        Next
+        {{ 'common.next' | t }}
       </button>
     </footer>
   } @else {
     <section class="empty-state surface-card">
-      <h2>No vacancies match your current filters</h2>
-      <p>Try resetting filters or importing additional data from Excel.</p>
-      <button type="button" mat-flat-button (click)="clearFilters()">Reset filters</button>
+      <h2>{{ 'vacancies.list.emptyTitle' | t }}</h2>
+      <p>{{ 'vacancies.list.emptyDescription' | t }}</p>
+      <button type="button" mat-flat-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
     </section>
   }
 </section>

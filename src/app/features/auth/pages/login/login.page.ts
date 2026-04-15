@@ -9,6 +9,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '../../../../core/auth/auth.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslationKey } from '../../../../core/i18n/translations';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -21,7 +24,8 @@ import { environment } from '../../../../../environments/environment';
     MatInputModule,
     MatButtonModule,
     MatCheckboxModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TranslatePipe
   ],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
@@ -29,6 +33,7 @@ import { environment } from '../../../../../environments/environment';
 })
 export class LoginPageComponent {
   private readonly formBuilder = inject(FormBuilder);
+  private readonly i18nService = inject(I18nService);
 
   protected readonly isSubmitting = signal(false);
   protected readonly submitted = signal(false);
@@ -70,7 +75,11 @@ export class LoginPageComponent {
     });
 
     if (!loginResult.success) {
-      this.errorMessage.set(loginResult.message ?? 'Unable to sign in. Please try again.');
+      this.errorMessage.set(
+        loginResult.messageKey
+          ? this.i18nService.translate(loginResult.messageKey as TranslationKey)
+          : this.i18nService.translate('auth.login.unexpectedError')
+      );
       this.isSubmitting.set(false);
       return;
     }

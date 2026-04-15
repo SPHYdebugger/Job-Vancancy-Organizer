@@ -6,63 +6,63 @@
         <p>{{ currentVacancy.position }}</p>
       </div>
       <div class="actions">
-        <a mat-stroked-button routerLink="/app/vacancies">Back</a>
-        <a mat-flat-button [routerLink]="['/app/vacancies', currentVacancy.id, 'edit']">Edit</a>
-        <button mat-stroked-button type="button" (click)="deleteVacancy()">Delete</button>
+        <a mat-stroked-button routerLink="/app/vacancies">{{ 'vacancies.detail.back' | t }}</a>
+        <a mat-flat-button [routerLink]="['/app/vacancies', currentVacancy.id, 'edit']">{{ 'common.edit' | t }}</a>
+        <button mat-stroked-button type="button" (click)="deleteVacancy()">{{ 'common.delete' | t }}</button>
       </div>
     </header>
 
     <section class="grid">
       <article class="item">
-        <h2>Status</h2>
-        <p>{{ currentVacancy.applicationStatus }}</p>
+        <h2>{{ 'vacancies.list.status' | t }}</h2>
+        <p>{{ statusLabel(currentVacancy.applicationStatus) }}</p>
       </article>
       <article class="item">
-        <h2>Priority</h2>
-        <p>{{ currentVacancy.priority }}</p>
+        <h2>{{ 'vacancies.list.priority' | t }}</h2>
+        <p>{{ priorityLabel(currentVacancy.priority) }}</p>
       </article>
       <article class="item">
-        <h2>Modality</h2>
-        <p>{{ currentVacancy.modality }}</p>
+        <h2>{{ 'vacancies.list.modality' | t }}</h2>
+        <p>{{ modalityLabel(currentVacancy.modality) }}</p>
       </article>
       <article class="item">
-        <h2>Domain</h2>
+        <h2>{{ 'vacancies.form.domain' | t }}</h2>
         <p>{{ currentVacancy.domain }}</p>
       </article>
       <article class="item">
-        <h2>Headquarters</h2>
+        <h2>{{ 'vacancies.list.headquarters' | t }}</h2>
         <p>{{ currentVacancy.headquarters }}</p>
       </article>
       <article class="item">
-        <h2>Application Date</h2>
-        <p>{{ currentVacancy.applicationDate || '-' }}</p>
+        <h2>{{ 'vacancies.list.applicationDate' | t }}</h2>
+        <p>{{ currentVacancy.applicationDate || ('common.notAvailable' | t) }}</p>
       </article>
       <article class="item">
-        <h2>Last Updated</h2>
-        <p>{{ currentVacancy.lastUpdatedAt | date: 'MMM d, y · HH:mm' }}</p>
+        <h2>{{ 'vacancies.detail.lastUpdated' | t }}</h2>
+        <p>{{ currentVacancy.lastUpdatedAt | date: 'MMM d, y · HH:mm' : '' : locale() }}</p>
       </article>
       <article class="item">
-        <h2>Contact</h2>
-        <p>{{ currentVacancy.contactName || '-' }}</p>
+        <h2>{{ 'vacancies.detail.contact' | t }}</h2>
+        <p>{{ currentVacancy.contactName || ('common.notAvailable' | t) }}</p>
       </article>
       <article class="item wide">
-        <h2>Tags</h2>
-        <p>{{ currentVacancy.tags.join(', ') || '-' }}</p>
+        <h2>{{ 'vacancies.detail.tags' | t }}</h2>
+        <p>{{ currentVacancy.tags.join(', ') || ('common.notAvailable' | t) }}</p>
       </article>
       <article class="item wide">
-        <h2>Notes</h2>
-        <p>{{ currentVacancy.notes || '-' }}</p>
+        <h2>{{ 'vacancies.form.notes' | t }}</h2>
+        <p>{{ currentVacancy.notes || ('common.notAvailable' | t) }}</p>
       </article>
       <article class="item wide">
-        <h2>HR Observations</h2>
-        <p>{{ currentVacancy.hrObservations || '-' }}</p>
+        <h2>{{ 'vacancies.form.hrObservations' | t }}</h2>
+        <p>{{ currentVacancy.hrObservations || ('common.notAvailable' | t) }}</p>
       </article>
     </section>
   </section>
 } @else {
   <section class="vacancy-detail-shell surface-card empty">
-    <h1>Vacancy not found</h1>
-    <p>The requested record does not exist or was removed.</p>
-    <a mat-flat-button routerLink="/app/vacancies">Return to list</a>
+    <h1>{{ 'vacancies.detail.titleNotFound' | t }}</h1>
+    <p>{{ 'vacancies.detail.notFoundDescription' | t }}</p>
+    <a mat-flat-button routerLink="/app/vacancies">{{ 'vacancies.detail.returnToList' | t }}</a>
   </section>
 }

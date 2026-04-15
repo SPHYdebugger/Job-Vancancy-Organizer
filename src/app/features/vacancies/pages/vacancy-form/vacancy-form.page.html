@@ -1,16 +1,16 @@
 <section class="vacancy-form-shell surface-card">
   <header>
     <div>
-      <h1>{{ isEditMode() ? 'Edit Vacancy' : 'Add Vacancy' }}</h1>
-      <p>Structured form ready for production-oriented vacancy tracking.</p>
+      <h1>{{ isEditMode() ? ('vacancies.form.editTitle' | t) : ('vacancies.form.addTitle' | t) }}</h1>
+      <p>{{ 'vacancies.form.subtitle' | t }}</p>
     </div>
     <div class="header-actions">
       @if (!isEditMode()) {
         <button type="button" mat-stroked-button (click)="openExcelImport()" [disabled]="isImporting()">
-          {{ isImporting() ? 'Importing...' : 'Import from Excel' }}
+          {{ isImporting() ? ('vacancies.form.importing' | t) : ('vacancies.form.importFromExcel' | t) }}
         </button>
       }
-      <a routerLink="/app/vacancies">Back to list</a>
+      <a routerLink="/app/vacancies">{{ 'vacancies.form.backToList' | t }}</a>
     </div>
   </header>
 
@@ -23,146 +23,146 @@
 
   <form class="form-grid" [formGroup]="vacancyForm" (ngSubmit)="save()">
     <section class="block">
-      <h2>General Information</h2>
+      <h2>{{ 'vacancies.form.section.general' | t }}</h2>
 
       <mat-form-field appearance="outline">
-        <mat-label>Company</mat-label>
+        <mat-label>{{ 'vacancies.form.company' | t }}</mat-label>
         <input matInput formControlName="company" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Position</mat-label>
+        <mat-label>{{ 'vacancies.form.position' | t }}</mat-label>
         <input matInput formControlName="position" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Domain</mat-label>
+        <mat-label>{{ 'vacancies.form.domain' | t }}</mat-label>
         <input matInput formControlName="domain" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Headquarters</mat-label>
+        <mat-label>{{ 'vacancies.form.headquarters' | t }}</mat-label>
         <input matInput formControlName="headquarters" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Modality</mat-label>
+        <mat-label>{{ 'vacancies.form.modality' | t }}</mat-label>
         <mat-select formControlName="modality">
           @for (option of modalityOptions; track option) {
-            <mat-option [value]="option">{{ option }}</mat-option>
+            <mat-option [value]="option">{{ modalityLabel(option) }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Salary</mat-label>
+        <mat-label>{{ 'vacancies.form.salary' | t }}</mat-label>
         <input matInput formControlName="salary" />
       </mat-form-field>
     </section>
 
     <section class="block">
-      <h2>Contact & Source</h2>
+      <h2>{{ 'vacancies.form.section.contact' | t }}</h2>
 
       <mat-form-field appearance="outline">
-        <mat-label>Offer Source</mat-label>
+        <mat-label>{{ 'vacancies.form.offerSource' | t }}</mat-label>
         <input matInput formControlName="offerSource" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Offer URL</mat-label>
+        <mat-label>{{ 'vacancies.form.offerUrl' | t }}</mat-label>
         <input matInput formControlName="offerUrl" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Company URL</mat-label>
+        <mat-label>{{ 'vacancies.form.companyUrl' | t }}</mat-label>
         <input matInput formControlName="companyUrl" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Contact Name</mat-label>
+        <mat-label>{{ 'vacancies.form.contactName' | t }}</mat-label>
         <input matInput formControlName="contactName" />
       </mat-form-field>
 
       <label>
-        Contact Date
+        {{ 'vacancies.form.contactDate' | t }}
         <input type="date" formControlName="contactDate" />
       </label>
 
       <label>
-        Application Date
+        {{ 'vacancies.form.applicationDate' | t }}
         <input type="date" formControlName="applicationDate" />
       </label>
     </section>
 
     <section class="block">
-      <h2>Process Status</h2>
+      <h2>{{ 'vacancies.form.section.process' | t }}</h2>
 
       <mat-form-field appearance="outline">
-        <mat-label>Status</mat-label>
+        <mat-label>{{ 'vacancies.list.status' | t }}</mat-label>
         <mat-select formControlName="status">
           @for (status of statusOptions; track status) {
-            <mat-option [value]="status">{{ status }}</mat-option>
+            <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Stage</mat-label>
+        <mat-label>{{ 'vacancies.form.stage' | t }}</mat-label>
         <input matInput formControlName="processStage" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Priority</mat-label>
+        <mat-label>{{ 'vacancies.list.priority' | t }}</mat-label>
         <mat-select formControlName="priority">
           @for (priority of priorityOptions; track priority) {
-            <mat-option [value]="priority">{{ priority }}</mat-option>
+            <mat-option [value]="priority">{{ priorityLabel(priority) }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Company Response</mat-label>
+        <mat-label>{{ 'vacancies.form.companyResponse' | t }}</mat-label>
         <mat-select formControlName="responseState">
           @for (response of companyResponseOptions; track response) {
-            <mat-option [value]="response">{{ response }}</mat-option>
+            <mat-option [value]="response">{{ responseLabel(response) }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
       <label class="checkbox-field">
         <input type="checkbox" formControlName="followUpPending" />
-        Follow-up pending
+        {{ 'vacancies.form.followUpPending' | t }}
       </label>
 
       <label>
-        Next Follow-up Date
+        {{ 'vacancies.form.nextFollowUpDate' | t }}
         <input type="date" formControlName="nextFollowUpDate" />
       </label>
     </section>
 
     <section class="block block-wide">
-      <h2>Notes</h2>
+      <h2>{{ 'vacancies.form.section.notes' | t }}</h2>
 
       <mat-form-field appearance="outline">
-        <mat-label>Tags (comma separated)</mat-label>
+        <mat-label>{{ 'vacancies.form.tags' | t }}</mat-label>
         <input matInput formControlName="tags" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Notes</mat-label>
+        <mat-label>{{ 'vacancies.form.notes' | t }}</mat-label>
         <textarea matInput rows="4" formControlName="notes"></textarea>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>HR Observations</mat-label>
+        <mat-label>{{ 'vacancies.form.hrObservations' | t }}</mat-label>
         <textarea matInput rows="4" formControlName="hrObservations"></textarea>
       </mat-form-field>
     </section>
 
     <section class="actions">
-      <button type="button" mat-stroked-button routerLink="/app/vacancies">Cancel</button>
+      <button type="button" mat-stroked-button routerLink="/app/vacancies">{{ 'common.cancel' | t }}</button>
       <button type="submit" mat-flat-button [disabled]="vacancyForm.invalid || isSaving()">
-        {{ isEditMode() ? 'Update Vacancy' : 'Create Vacancy' }}
+        {{ isEditMode() ? ('vacancies.form.updateVacancy' | t) : ('vacancies.form.createVacancy' | t) }}
       </button>
     </section>
   </form>

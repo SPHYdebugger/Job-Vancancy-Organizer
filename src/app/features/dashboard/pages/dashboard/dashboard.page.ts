@@ -22,6 +22,10 @@ import {
   NgApexchartsModule
 } from 'ng-apexcharts';
 
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslationKey } from '../../../../core/i18n/translations';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { dashboardStatusToTranslationKey } from '../../../../shared/utils/label-mappers';
 import { DashboardAnalyticsService } from '../../services/dashboard-analytics.service';
 import {
   CompanyInteraction,
@@ -82,7 +86,8 @@ interface HorizontalBarOptions {
     MatButtonModule,
     MatProgressBarModule,
     MatChipsModule,
-    NgApexchartsModule
+    NgApexchartsModule,
+    TranslatePipe
   ],
   templateUrl: './dashboard.page.html',
   styleUrl: './dashboard.page.scss',
@@ -110,6 +115,7 @@ interface HorizontalBarOptions {
 })
 export class DashboardPageComponent {
   private readonly analyticsService = inject(DashboardAnalyticsService);
+  private readonly i18nService = inject(I18nService);
 
   protected readonly analytics: DashboardAnalytics = this.analyticsService.getAnalytics();
   protected readonly kpiMetrics: KpiMetric[] = this.analytics.metrics;
@@ -118,10 +124,23 @@ export class DashboardPageComponent {
   protected readonly topCompanies: CompanyInteraction[] = this.analytics.topCompanies;
   protected readonly progress = this.analytics.progress;
 
-  protected readonly applicationsChart = this.buildApplicationsChart();
-  protected readonly statusChart = this.buildStatusDonutChart(this.analytics.statusDistribution);
-  protected readonly modalityChart = this.buildModalityDonutChart(this.analytics.modalityDistribution);
-  protected readonly stackChart = this.buildStackBarChart(this.analytics.stackBreakdown);
+  protected readonly locale = this.i18nService.locale;
+  protected readonly applicationsChart = computed(() => {
+    this.i18nService.language();
+    return this.buildApplicationsChart();
+  });
+  protected readonly statusChart = computed(() => {
+    this.i18nService.language();
+    return this.buildStatusDonutChart(this.analytics.statusDistribution);
+  });
+  protected readonly modalityChart = computed(() => {
+    this.i18nService.language();
+    return this.buildModalityDonutChart(this.analytics.modalityDistribution);
+  });
+  protected readonly stackChart = computed(() => {
+    this.i18nService.language();
+    return this.buildStackBarChart(this.analytics.stackBreakdown);
+  });
 
   protected readonly globalProgress = computed(() => this.calculateGlobalProgress(this.progress));
 
@@ -145,11 +164,64 @@ export class DashboardPageComponent {
     return `status-${status.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   }
 
+  protected metricLabel(metricId: string): string {
+    const map: Record<string, TranslationKey> = {
+      'total-vacancies': 'dashboard.kpi.totalVacancies',
+      'cv-sent': 'dashboard.kpi.cvSent',
+      applied: 'dashboard.kpi.applied',
+      interviews: 'dashboard.kpi.interviews',
+      'technical-tests': 'dashboard.kpi.technicalTests',
+      rejected: 'dashboard.kpi.rejected',
+      'no-response': 'dashboard.kpi.noResponse',
+      followups: 'dashboard.kpi.pendingFollowUps'
+    };
+    return this.i18nService.translate(map[metricId] ?? 'dashboard.kpi.totalVacancies');
+  }
+
+  protected metricTrendLabel(metricId: string): string {
+    const map: Record<string, TranslationKey> = {
+      'total-vacancies': 'dashboard.kpi.totalVacanciesTrend',
+      'cv-sent': 'dashboard.kpi.cvSentTrend',
+      applied: 'dashboard.kpi.appliedTrend',
+      interviews: 'dashboard.kpi.interviewsTrend',
+      'technical-tests': 'dashboard.kpi.technicalTestsTrend',
+      rejected: 'dashboard.kpi.rejectedTrend',
+      'no-response': 'dashboard.kpi.noResponseTrend',
+      followups: 'dashboard.kpi.pendingFollowUpsTrend'
+    };
+    return this.i18nService.translate(map[metricId] ?? 'dashboard.kpi.totalVacanciesTrend');
+  }
+
+  protected activityTitle(activityId: string): string {
+    return this.i18nService.translate(`dashboard.activity.${activityId}.title` as TranslationKey);
+  }
+
+  protected activityDetail(activityId: string): string {
+    return this.i18nService.translate(`dashboard.activity.${activityId}.detail` as TranslationKey);
+  }
+
+  protected actionTitle(actionId: string): string {
+    return this.i18nService.translate(`dashboard.action.${actionId}` as TranslationKey);
+  }
+
+  protected statusLabel(status: string): string {
+    return this.i18nService.translate(dashboardStatusToTranslationKey(status));
+  }
+
+  protected priorityLabel(priority: 'Low' | 'Medium' | 'High'): string {
+    const map: Record<'Low' | 'Medium' | 'High', TranslationKey> = {
+      Low: 'priority.low',
+      Medium: 'priority.medium',
+      High: 'priority.high'
+    };
+    return this.i18nService.translate(map[priority]);
+  }
+
   private buildApplicationsChart(): AreaChartOptions {
     return {
       series: [
         {
-          name: 'Applications',
+          name: this.i18nService.translate('dashboard.applications'),
           data: this.analytics.monthlyApplications.map((item) => item.total)
         }
       ],
@@ -182,7 +254,9 @@ export class DashboardPageComponent {
         padding: { left: 6, right: 10 }
       },
       xaxis: {
-        categories: this.analytics.monthlyApplications.map((item) => item.month),
+        categories: this.analytics.monthlyApplications.map((item, index, items) =>
+          this.translateMonthWithYear(item.month, index, items.length)
+        ),
         labels: {
           style: { colors: '#475569', fontFamily: 'Manrope' }
         },
@@ -198,7 +272,7 @@ export class DashboardPageComponent {
       tooltip: {
         theme: 'light',
         y: {
-          formatter: (value: number) => `${value} applications`
+          formatter: (value: number) => `${value} ${this.i18nService.translate('dashboard.applications').toLowerCase()}`
         }
       }
     };
@@ -207,7 +281,7 @@ export class DashboardPageComponent {
   private buildStatusDonutChart(distribution: DistributionPoint[]): DonutChartOptions {
     return {
       series: distribution.map((item) => item.value),
-      labels: distribution.map((item) => item.label),
+      labels: distribution.map((item) => this.statusLabel(item.label)),
       chart: {
         type: 'donut',
         height: 300
@@ -233,7 +307,7 @@ export class DashboardPageComponent {
       },
       tooltip: {
         y: {
-          formatter: (value: number) => `${value} roles`
+          formatter: (value: number) => `${value} ${this.i18nService.translate('dashboard.roles')}`
         }
       },
       responsive: [
@@ -252,7 +326,7 @@ export class DashboardPageComponent {
   private buildModalityDonutChart(distribution: DistributionPoint[]): DonutChartOptions {
     return {
       series: distribution.map((item) => item.value),
-      labels: distribution.map((item) => item.label),
+      labels: distribution.map((item) => this.translateModalityLabel(item.label)),
       chart: {
         type: 'donut',
         height: 300
@@ -278,7 +352,7 @@ export class DashboardPageComponent {
       },
       tooltip: {
         y: {
-          formatter: (value: number) => `${value} roles`
+          formatter: (value: number) => `${value} ${this.i18nService.translate('dashboard.roles')}`
         }
       },
       responsive: [
@@ -298,7 +372,7 @@ export class DashboardPageComponent {
     return {
       series: [
         {
-          name: 'Vacancies',
+          name: this.i18nService.translate('dashboard.vacancies'),
           data: stackData.map((item) => item.total)
         }
       ],
@@ -336,10 +410,51 @@ export class DashboardPageComponent {
       },
       tooltip: {
         y: {
-          formatter: (value: number) => `${value} vacancies`
+          formatter: (value: number) => `${value} ${this.i18nService.translate('dashboard.vacancies').toLowerCase()}`
         }
       }
     };
+  }
+
+  private translateMonth(month: string): string {
+    const normalized = month.toLowerCase();
+    const monthMap: Record<string, TranslationKey> = {
+      jan: 'dashboard.month.jan',
+      feb: 'dashboard.month.feb',
+      mar: 'dashboard.month.mar',
+      apr: 'dashboard.month.apr',
+      may: 'dashboard.month.may',
+      jun: 'dashboard.month.jun',
+      jul: 'dashboard.month.jul',
+      aug: 'dashboard.month.aug',
+      sep: 'dashboard.month.sep',
+      oct: 'dashboard.month.oct',
+      nov: 'dashboard.month.nov',
+      dec: 'dashboard.month.dec'
+    };
+
+    return this.i18nService.translate(monthMap[normalized] ?? 'dashboard.month.jan');
+  }
+
+  private translateMonthWithYear(month: string, index: number, totalItems: number): string {
+    const translatedMonth = this.translateMonth(month);
+    const currentDate = new Date();
+    const monthOffset = index - (totalItems - 1);
+    const pointDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + monthOffset, 1);
+    const shortYear = `${pointDate.getFullYear()}`.slice(-2);
+
+    return `${translatedMonth}${shortYear}`;
+  }
+
+  private translateModalityLabel(label: string): string {
+    const normalized = label.toLowerCase().replace('-', '_');
+    const modalityMap: Record<string, 'modality.remote' | 'modality.hybrid' | 'modality.on_site'> = {
+      remote: 'modality.remote',
+      hybrid: 'modality.hybrid',
+      on_site: 'modality.on_site'
+    };
+
+    return this.i18nService.translate(modalityMap[normalized] ?? 'modality.remote');
   }
 
   private calculateGlobalProgress(progress: ProgressSnapshot): number {

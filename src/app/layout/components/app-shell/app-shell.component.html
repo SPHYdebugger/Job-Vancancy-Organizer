@@ -2,15 +2,14 @@
   <button
     class="mobile-overlay"
     type="button"
-    aria-label="Close navigation"
+    [attr.aria-label]="'layout.a11y.closeNavigation' | t"
     [class.visible]="isSidebarOpen()"
     (click)="closeSidebar()"></button>
 
   <aside class="sidebar" [class.open]="isSidebarOpen()">
     <div class="brand">
       <img class="brand-logo" src="/assets/images/JVO_logo.png" alt="JVO logo" />
-      
-      <h1>JVO Workspace</h1>
+      <h1>{{ 'layout.appName' | t }}</h1>
     </div>
 
     <nav class="nav-list">
@@ -20,19 +19,34 @@
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: item.route === '/app/vacancies' }"
           (click)="closeSidebar()">
-          <span class="label">{{ item.label }}</span>
-          <span class="description">{{ item.description }}</span>
+          <span class="label">{{ item.labelKey | t }}</span>
+          <span class="description">{{ item.descriptionKey | t }}</span>
         </a>
       }
     </nav>
 
     <div class="sidebar-footer">
-      <a class="signout-link" routerLink="/auth/login" (click)="logout()">Sign Out</a>
+      <a class="signout-link" routerLink="/auth/login" (click)="logout()">{{ 'common.signOut' | t }}</a>
+
+      <div class="footer-bottom">
+        <p class="datetime">{{ currentDateTime() }}</p>
+        <button
+          type="button"
+          class="lang-flag"
+          [attr.aria-label]="languageToggleAria()"
+          (click)="toggleLanguage()">
+          {{ languageToggleFlag() }}
+        </button>
+      </div>
     </div>
   </aside>
 
   <div class="content-area">
-    <button class="menu-button menu-button-inline" type="button" aria-label="Toggle navigation" (click)="toggleSidebar()">
+    <button
+      class="menu-button menu-button-inline"
+      type="button"
+      [attr.aria-label]="'layout.a11y.toggleNavigation' | t"
+      (click)="toggleSidebar()">
       <span></span>
       <span></span>
       <span></span>
