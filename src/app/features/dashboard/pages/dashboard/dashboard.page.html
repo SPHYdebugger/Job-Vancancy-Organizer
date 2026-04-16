@@ -140,7 +140,7 @@
     </article>
 
     @defer (on idle) {
-      <article class="panel surface-card">
+      <article class="panel panel-quarter surface-card">
         <div class="panel-header">
           <div>
             <h3>{{ 'dashboard.section.recentActivityTitle' | t }}</h3>
@@ -165,7 +165,7 @@
         </ul>
       </article>
 
-      <article class="panel surface-card">
+      <article class="panel panel-quarter surface-card">
         <div class="panel-header">
           <div>
             <h3>{{ 'dashboard.section.upcomingActionsTitle' | t }}</h3>
@@ -195,7 +195,51 @@
         </ul>
       </article>
 
-      <article class="panel surface-card">
+      <article class="panel panel-quarter surface-card">
+        <div class="panel-header">
+          <div>
+            <h3>{{ 'dashboard.section.followUpsQueueTitle' | t }}</h3>
+            <p>{{ 'dashboard.section.followUpsQueueSubtitle' | t }}</p>
+          </div>
+        </div>
+
+        <ul class="followups-list">
+          @if (!hasFollowUpData() || globalFollowUps().length === 0) {
+            <li>
+              <p class="followup-meta no-data-inline">{{ 'dashboard.noDataYet' | t }}</p>
+            </li>
+          } @else {
+            @for (followUp of globalFollowUps(); track followUp.id) {
+              <li>
+                <div>
+                  <p class="followup-subject">{{ followUp.subject }}</p>
+                  <p class="followup-meta">{{ followUp.company }} · {{ followUp.position }}</p>
+                  <p class="followup-date">{{ followUp.plannedDate | date: 'MMM d, y · HH:mm' : '' : locale() }}</p>
+                </div>
+                <div class="followup-actions">
+                  <span class="chip" [ngClass]="followUpStatusClass(followUp.status, followUp.overdue)">
+                    {{ followUp.overdue ? ('dashboard.followups.overdue' | t) : followUpStatusLabel(followUp.status) }}
+                  </span>
+                  @if (followUp.status === 'completed') {
+                    <button mat-stroked-button type="button" (click)="reopenFollowUp(followUp.id)">
+                      {{ 'dashboard.followups.reopen' | t }}
+                    </button>
+                  } @else {
+                    <button mat-stroked-button type="button" (click)="markFollowUpCompleted(followUp.id)">
+                      {{ 'dashboard.followups.complete' | t }}
+                    </button>
+                  }
+                  <a mat-stroked-button [routerLink]="['/app/vacancies', followUp.vacancyId]">
+                    {{ 'common.view' | t }}
+                  </a>
+                </div>
+              </li>
+            }
+          }
+        </ul>
+      </article>
+
+      <article class="panel panel-quarter surface-card">
         <div class="panel-header">
           <div>
             <h3>{{ 'dashboard.section.topCompanyInteractionsTitle' | t }}</h3>

@@ -55,7 +55,22 @@
 .filter-actions {
   display: flex;
   justify-content: flex-end;
-  align-items: center;
+  align-items: flex-end;
+  grid-column: 3 / span 2;
+  justify-self: stretch;
+  align-self: end;
+}
+
+.date-range {
+  grid-column: 1 / span 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  align-items: end;
+
+  label {
+    margin: 0;
+  }
 }
 
 .table-shell {
@@ -207,6 +222,15 @@
   .filters-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .date-range {
+    grid-column: 1 / span 2;
+  }
+
+  .filter-actions {
+    grid-column: 3;
+    justify-self: end;
+  }
 }
 
 @media (max-width: 920px) {
@@ -220,10 +244,23 @@
   .filters-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .date-range {
+    grid-column: 1 / -1;
+  }
+
+  .filter-actions {
+    grid-column: 2;
+  }
 }
 
 @media (max-width: 640px) {
   .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .date-range {
+    grid-column: 1;
     grid-template-columns: 1fr;
   }
 
@@ -236,7 +273,12 @@
     width: 100%;
   }
 
-  .filter-actions,
+  .filter-actions {
+    grid-column: 1;
+    justify-self: start;
+    justify-content: flex-start;
+  }
+
   .pagination {
     justify-content: flex-start;
     flex-wrap: wrap;

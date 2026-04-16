@@ -6,14 +6,17 @@ import { RouterLink } from '@angular/router';
 import { startWith } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
 
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { Vacancy } from '../../../../core/models/vacancy.model';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { ConfirmationDialogComponent } from '../../../../shared/ui/confirmation-dialog/confirmation-dialog.component';
 import { modalityToTranslationKey, priorityToTranslationKey, statusToTranslationKey } from '../../../../shared/utils/label-mappers';
 import { VacancyService } from '../../services/vacancy.service';
 
@@ -72,6 +75,7 @@ interface VacancyFilters {
 export class VacanciesListPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly vacancyService = inject(VacancyService);
+  private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly i18nService = inject(I18nService);
 
@@ -169,8 +173,8 @@ export class VacanciesListPageComponent {
     return vacancy.id;
   }
 
-  protected deleteVacancy(vacancy: Vacancy): void {
-    const shouldDelete = confirm(
+  protected async deleteVacancy(vacancy: Vacancy): Promise<void> {
+    const shouldDelete = await this.confirmAction(
       this.i18nService.translate('vacancies.list.deleteConfirm', {
         company: vacancy.company,
         position: vacancy.position
@@ -185,6 +189,21 @@ export class VacanciesListPageComponent {
     this.snackBar.open(this.i18nService.translate('vacancies.list.deleted'), this.i18nService.translate('common.close'), {
       duration: 2500
     });
+  }
+
+  private async confirmAction(message: string): Promise<boolean> {
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      maxWidth: '460px',
+      data: {
+        title: this.i18nService.translate('vacancies.deleteDialog.title'),
+        message,
+        warningMessage: this.i18nService.translate('vacancies.deleteDialog.irreversibleWarning'),
+        cancelLabelKey: 'common.cancel',
+        confirmLabelKey: 'common.delete'
+      }
+    });
+
+    return Boolean(await firstValueFrom(dialogRef.afterClosed()));
   }
 
   protected clearFilters(): void {
@@ -328,8 +347,8 @@ export class VacanciesListPageComponent {
   }
 
   private compareVacancies(left: Vacancy, right: Vacancy, sortBy: SortOption): number {
-    const leftUpdated = Date.parse(left.lastUpdatedAt);
-    const rightUpdated = Date.parse(right.lastUpdatedAt);
+    const leftUpdated = Date.parse(left.updatedAt);
+    const rightUpdated = Date.parse(right.updatedAt);
     const leftApplication = Date.parse(left.applicationDate || left.createdAt);
     const rightApplication = Date.parse(right.applicationDate || right.createdAt);
     const leftPriority = this.priorityRanking.get(left.priority) ?? 0;

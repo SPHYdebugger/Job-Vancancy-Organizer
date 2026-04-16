@@ -72,15 +72,17 @@
       </mat-select>
     </mat-form-field>
 
-    <label>
-      {{ 'vacancies.list.fromDate' | t }}
-      <input type="date" formControlName="fromDate" />
-    </label>
+    <div class="date-range">
+      <label>
+        {{ 'vacancies.list.fromDate' | t }}
+        <input type="date" formControlName="fromDate" />
+      </label>
 
-    <label>
-      {{ 'vacancies.list.toDate' | t }}
-      <input type="date" formControlName="toDate" />
-    </label>
+      <label>
+        {{ 'vacancies.list.toDate' | t }}
+        <input type="date" formControlName="toDate" />
+      </label>
+    </div>
 
     @if (hasAnyVacancies()) {
       <div class="filter-actions">
@@ -189,7 +191,7 @@
                 <td>{{ modalityLabel(vacancy.modality) }}</td>
                 <td>{{ (vacancy.applicationDate || vacancy.createdAt) | date: 'MMM d, y' : '' : locale() }}</td>
                 <td><span class="chip priority">{{ priorityLabel(vacancy.priority) }}</span></td>
-                <td>{{ vacancy.lastUpdatedAt | date: 'MMM d, y' : '' : locale() }}</td>
+                <td>{{ vacancy.updatedAt | date: 'MMM d, y' : '' : locale() }}</td>
                 <td class="actions-cell">
                   <a mat-button [routerLink]="['/app/vacancies', vacancy.id]">{{ 'common.view' | t }}</a>
                   <a mat-button [routerLink]="['/app/vacancies', vacancy.id, 'edit']">{{ 'common.edit' | t }}</a>

@@ -20,6 +20,8 @@ export function responseToTranslationKey(response: CompanyResponseState): Transl
 export function dashboardStatusToTranslationKey(status: string): TranslationKey {
   const normalized = status.toLowerCase().replace(/\s+/g, '_').replace('-', '_');
   const allowed: Record<string, TranslationKey> = {
+    draft: 'status.draft',
+    saved: 'status.saved',
     pending: 'status.pending',
     cv_sent: 'status.cv_sent',
     applied: 'status.applied',
@@ -27,12 +29,14 @@ export function dashboardStatusToTranslationKey(status: string): TranslationKey 
     hr_contact: 'status.hr_contact',
     interview: 'status.interview',
     technical_test: 'status.technical_test',
+    offer: 'status.offer',
     finalist: 'status.finalist',
     rejected: 'status.rejected',
+    withdrawn: 'status.withdrawn',
     no_response: 'status.no_response',
-    hired: 'status.hired'
+    hired: 'status.hired',
+    archived: 'status.archived'
   };
 
   return allowed[normalized] ?? 'status.pending';
 }
-

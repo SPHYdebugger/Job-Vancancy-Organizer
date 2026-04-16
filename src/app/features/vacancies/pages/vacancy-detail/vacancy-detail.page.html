@@ -35,11 +35,11 @@
       </article>
       <article class="item">
         <h2>{{ 'vacancies.list.applicationDate' | t }}</h2>
-        <p>{{ currentVacancy.applicationDate || ('common.notAvailable' | t) }}</p>
+        <p>{{ formatCompactDateTime(currentVacancy.applicationDate) }}</p>
       </article>
       <article class="item">
         <h2>{{ 'vacancies.detail.lastUpdated' | t }}</h2>
-        <p>{{ currentVacancy.lastUpdatedAt | date: 'MMM d, y · HH:mm' : '' : locale() }}</p>
+        <p>{{ lastUpdatedSummary() }}</p>
       </article>
       <article class="item">
         <h2>{{ 'vacancies.detail.contact' | t }}</h2>
@@ -58,6 +58,276 @@
         <p>{{ currentVacancy.hrObservations || ('common.notAvailable' | t) }}</p>
       </article>
     </section>
+
+    <section class="event-composer surface-card">
+      <header class="composer-header" (click)="toggleEventComposer()">
+        <div>
+          <h2>{{ 'vacancies.events.composerTitle' | t }}</h2>
+          <p>{{ 'vacancies.events.composerSubtitle' | t }}</p>
+        </div>
+        <button
+          type="button"
+          class="composer-toggle"
+          [attr.aria-label]="isEventComposerExpanded() ? ('vacancies.events.collapseForm' | t) : ('vacancies.events.expandForm' | t)"
+          (click)="toggleEventComposer(); $event.stopPropagation()">
+          <span [class.rotated]="isEventComposerExpanded()">⌄</span>
+        </button>
+      </header>
+
+      @if (isEventComposerExpanded()) {
+      <form class="event-form" [formGroup]="eventForm" (ngSubmit)="saveEvent()">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.events.eventType' | t }}</mat-label>
+          <mat-select formControlName="type">
+            @for (eventType of eventTypeOptions; track eventType) {
+              <mat-option [value]="eventType">{{ eventTypeLabel(eventType) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.events.title' | t }}</mat-label>
+          <input matInput formControlName="title" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="event-full">
+          <mat-label>{{ 'vacancies.events.description' | t }}</mat-label>
+          <textarea matInput rows="3" formControlName="description"></textarea>
+        </mat-form-field>
+
+        <label class="date-field">
+          <span>{{ 'vacancies.events.eventDate' | t }}</span>
+          <input type="datetime-local" formControlName="eventAt" />
+        </label>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.events.statusAfter' | t }}</mat-label>
+          <mat-select formControlName="statusAfter">
+            <mat-option value="">{{ 'common.notAvailable' | t }}</mat-option>
+            @for (status of statusOptions; track status) {
+              <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.events.processStage' | t }}</mat-label>
+          <input matInput formControlName="processStage" />
+        </mat-form-field>
+
+        @if (selectedEventType() === 'applied') {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.cvFileName' | t }}</mat-label>
+            <input matInput formControlName="cvFileName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.coverLetterFileName' | t }}</mat-label>
+            <input matInput formControlName="coverLetterFileName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.recommendationFileName' | t }}</mat-label>
+            <input matInput formControlName="recommendationFileName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="event-full">
+            <mat-label>{{ 'vacancies.events.presentationText' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="presentationText"></textarea>
+          </mat-form-field>
+        }
+
+        @if (
+          selectedEventType() === 'response_received' ||
+          selectedEventType() === 'interview_scheduled' ||
+          selectedEventType() === 'interview_completed'
+        ) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.companyResponse' | t }}</mat-label>
+            <mat-select formControlName="companyResponse">
+              <mat-option value="">{{ 'common.notAvailable' | t }}</mat-option>
+              <mat-option value="pending">{{ 'response.pending' | t }}</mat-option>
+              <mat-option value="positive">{{ 'response.positive' | t }}</mat-option>
+              <mat-option value="negative">{{ 'response.negative' | t }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.contactChannel' | t }}</mat-label>
+            <mat-select formControlName="contactChannel">
+              <mat-option value="">{{ 'common.notAvailable' | t }}</mat-option>
+              <mat-option value="email">Email</mat-option>
+              <mat-option value="phone">Phone</mat-option>
+              <mat-option value="linkedin">LinkedIn</mat-option>
+              <mat-option value="whatsapp">WhatsApp</mat-option>
+              <mat-option value="other">{{ 'vacancies.events.channel.other' | t }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.contactName' | t }}</mat-label>
+            <input matInput formControlName="contactName" />
+          </mat-form-field>
+        }
+
+        @if (selectedEventType() === 'response_received' || selectedEventType() === 'rejected') {
+          <mat-form-field appearance="outline" class="event-full">
+            <mat-label>{{ 'vacancies.events.rejectionReason' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="rejectionReason"></textarea>
+          </mat-form-field>
+        }
+
+        @if (selectedEventType() === 'interview_scheduled' || selectedEventType() === 'interview_completed') {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.interviewType' | t }}</mat-label>
+            <mat-select formControlName="interviewType">
+              <mat-option value="hr">{{ 'vacancies.events.interview.hr' | t }}</mat-option>
+              <mat-option value="technical">{{ 'vacancies.events.interview.technical' | t }}</mat-option>
+              <mat-option value="final">{{ 'vacancies.events.interview.final' | t }}</mat-option>
+              <mat-option value="other">{{ 'vacancies.events.interview.other' | t }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          @if (selectedEventType() === 'interview_scheduled') {
+            <label class="date-field">
+              <span>{{ 'vacancies.events.interviewDate' | t }}</span>
+              <input type="datetime-local" formControlName="interviewDate" />
+            </label>
+          }
+          @if (selectedEventType() === 'interview_completed') {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'vacancies.events.interviewResult' | t }}</mat-label>
+              <mat-select formControlName="interviewResult">
+                <mat-option value="pending">{{ 'vacancies.events.interview.result.pending' | t }}</mat-option>
+                <mat-option value="passed">{{ 'vacancies.events.interview.result.passed' | t }}</mat-option>
+                <mat-option value="failed">{{ 'vacancies.events.interview.result.failed' | t }}</mat-option>
+                <mat-option value="unknown">{{ 'vacancies.events.interview.result.unknown' | t }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'vacancies.events.interviewEvaluatedSkills' | t }}</mat-label>
+              <input matInput formControlName="interviewEvaluatedSkills" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="event-full">
+              <mat-label>{{ 'vacancies.events.interviewHighlights' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="interviewHighlights"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="event-full">
+              <mat-label>{{ 'vacancies.events.interviewNotes' | t }}</mat-label>
+              <textarea matInput rows="3" formControlName="interviewNotes"></textarea>
+            </mat-form-field>
+          }
+        }
+
+        @if (selectedEventType() === 'follow_up_scheduled' || selectedEventType() === 'follow_up_sent') {
+          @if (selectedEventType() === 'follow_up_scheduled') {
+            <label class="date-field">
+              <span>{{ 'vacancies.events.followUpDate' | t }}</span>
+              <input type="datetime-local" formControlName="followUpDate" />
+            </label>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.contactChannel' | t }}</mat-label>
+            <mat-select formControlName="contactChannel">
+              <mat-option value="">{{ 'common.notAvailable' | t }}</mat-option>
+              <mat-option value="email">Email</mat-option>
+              <mat-option value="phone">Phone</mat-option>
+              <mat-option value="linkedin">LinkedIn</mat-option>
+              <mat-option value="whatsapp">WhatsApp</mat-option>
+              <mat-option value="other">{{ 'vacancies.events.channel.other' | t }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.events.followUpSubject' | t }}</mat-label>
+            <input matInput formControlName="followUpSubject" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="event-full">
+            <mat-label>{{ 'vacancies.events.followUpMessage' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="followUpMessage"></textarea>
+          </mat-form-field>
+        }
+
+        <div class="event-actions event-full">
+          @if (lastCalendarUrl(); as calendarUrl) {
+            <a class="calendar-link" [href]="calendarUrl" target="_blank" rel="noopener">
+              {{ 'vacancies.events.addToGoogleCalendar' | t }}
+            </a>
+          }
+          <button mat-flat-button type="submit" [disabled]="isSavingEvent() || eventForm.invalid">
+            {{ 'vacancies.events.save' | t }}
+          </button>
+        </div>
+      </form>
+      }
+    </section>
+
+    <section class="timeline surface-card">
+      <header>
+        <h2>{{ 'vacancies.timeline.title' | t }}</h2>
+      </header>
+
+      @if (orderedEvents().length === 0) {
+        <p class="empty-row">{{ 'dashboard.noDataYet' | t }}</p>
+      } @else {
+        <ul>
+          @for (event of orderedEvents(); track event.id) {
+            <li>
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-head">
+                  <div>
+                    <p class="timeline-title">{{ event.title }}</p>
+                    <p class="timeline-meta">
+                      {{ eventTypeLabel(event.type) }}
+                    </p>
+                    <p class="timeline-created-meta">
+                      {{ 'vacancies.events.createdAt' | t }}:
+                      @if (eventCreatedAt(event); as createdAtDate) {
+                        {{ formatEventDateTime(createdAtDate) }}
+                      } @else {
+                        {{ 'common.notAvailable' | t }}
+                      }
+                    </p>
+                  </div>
+                  <div class="timeline-actions">
+                    <button mat-stroked-button type="button" (click)="toggleEventView(event.id)">
+                      {{ expandedEventId() === event.id ? ('vacancies.events.hide' | t) : ('common.view' | t) }}
+                    </button>
+                    <button mat-stroked-button type="button" (click)="startEditEvent(event)">{{ 'common.edit' | t }}</button>
+                    <button mat-stroked-button type="button" (click)="deleteEvent(event)">{{ 'common.delete' | t }}</button>
+                  </div>
+                </div>
+
+                @if (expandedEventId() === event.id) {
+                  @if (editingEventId() === event.id) {
+                    <form class="event-edit-form" [formGroup]="eventEditForm" (ngSubmit)="saveEventEdit(event.id)">
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'vacancies.events.title' | t }}</mat-label>
+                        <input matInput formControlName="title" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="event-full">
+                        <mat-label>{{ 'vacancies.events.description' | t }}</mat-label>
+                        <textarea matInput rows="3" formControlName="description"></textarea>
+                      </mat-form-field>
+                      <label class="date-field event-full">
+                        <span>{{ 'vacancies.events.eventDate' | t }}</span>
+                        <input type="datetime-local" formControlName="eventAt" />
+                      </label>
+                      <div class="event-actions event-full">
+                        <button mat-stroked-button type="button" (click)="cancelEditEvent()">{{ 'common.cancel' | t }}</button>
+                        <button mat-flat-button type="submit">{{ 'vacancies.events.saveChanges' | t }}</button>
+                      </div>
+                    </form>
+                  } @else {
+                    @if (eventStatusTransition(event); as transition) {
+                      <p class="timeline-transition">{{ transition }}</p>
+                    }
+                    @if (event.description) {
+                      <p class="timeline-description">{{ event.description }}</p>
+                    }
+                  }
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
   </section>
 } @else {
   <section class="vacancy-detail-shell surface-card empty">

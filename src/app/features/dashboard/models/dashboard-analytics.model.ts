@@ -18,6 +18,7 @@ export interface KpiMetric {
   label: string;
   value: number;
   trendLabel: string;
+  trendValue: number;
   trendDirection: 'up' | 'down' | 'neutral';
 }
 

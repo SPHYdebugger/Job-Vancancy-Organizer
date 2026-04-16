@@ -23,39 +23,96 @@ type DashboardStatus =
 export class DashboardAnalyticsService {
   public buildAnalytics(vacancies: Vacancy[]): DashboardAnalytics {
     const sortedByLastUpdate = [...vacancies].sort(
-      (left, right) => new Date(right.lastUpdatedAt).getTime() - new Date(left.lastUpdatedAt).getTime()
+      (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
     );
     const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const isInMonthRange = (dateValue: string | null | undefined, rangeStart: Date, rangeEnd: Date): boolean => {
+      if (!dateValue) {
+        return false;
+      }
+
+      const parsedDate = new Date(dateValue);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return false;
+      }
+
+      return parsedDate >= rangeStart && parsedDate < rangeEnd;
+    };
+
+    const thisMonthCreated = vacancies.filter((vacancy) =>
+      isInMonthRange(vacancy.createdAt || vacancy.discoveredAt, currentMonthStart, nextMonthStart)
+    ).length;
+    const cvSentThisMonth = vacancies.filter(
+      (vacancy) =>
+        !['draft', 'saved', 'pending'].includes(vacancy.applicationStatus) &&
+        isInMonthRange(vacancy.applicationDate || vacancy.updatedAt, currentMonthStart, nextMonthStart)
+    ).length;
+    const cvSentPreviousMonth = vacancies.filter(
+      (vacancy) =>
+        !['draft', 'saved', 'pending'].includes(vacancy.applicationStatus) &&
+        isInMonthRange(vacancy.applicationDate || vacancy.updatedAt, previousMonthStart, currentMonthStart)
+    ).length;
+    const rejectedThisMonth = vacancies.filter(
+      (vacancy) =>
+        vacancy.applicationStatus === 'rejected' &&
+        isInMonthRange(vacancy.lastStatusChangeAt || vacancy.updatedAt, currentMonthStart, nextMonthStart)
+    ).length;
+    const dueThisWeek = vacancies.filter((vacancy) => {
+      if (!vacancy.followUpPending || !vacancy.nextFollowUpDate) {
+        return false;
+      }
+
+      const followUpDate = new Date(vacancy.nextFollowUpDate);
+      if (Number.isNaN(followUpDate.getTime())) {
+        return false;
+      }
+
+      const daysDiff = (followUpDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+      return daysDiff >= 0 && daysDiff <= 7;
+    }).length;
 
     const metrics = [
-      this.metric('total-vacancies', vacancies.length, 'neutral'),
+      this.metric('total-vacancies', vacancies.length, thisMonthCreated, thisMonthCreated > 0 ? 'up' : 'neutral'),
       this.metric(
         'cv-sent',
-        vacancies.filter((vacancy) => vacancy.cvSent || vacancy.applicationStatus !== 'pending').length,
-        'neutral'
+        vacancies.filter((vacancy) => !['draft', 'saved', 'pending'].includes(vacancy.applicationStatus)).length,
+        cvSentThisMonth - cvSentPreviousMonth,
+        cvSentThisMonth - cvSentPreviousMonth > 0
+          ? 'up'
+          : cvSentThisMonth - cvSentPreviousMonth < 0
+            ? 'down'
+            : 'neutral'
       ),
+      this.metric('applied', this.countApplied(vacancies), this.countApplied(vacancies), this.countApplied(vacancies) > 0 ? 'up' : 'neutral'),
       this.metric(
-        'applied',
-        vacancies.filter((vacancy) =>
-          ['applied', 'in_review', 'hr_contact', 'interview', 'technical_test', 'finalist', 'hired'].includes(
-            vacancy.applicationStatus
-          )
-        ).length,
-        'up'
+        'interviews',
+        vacancies.filter((vacancy) => vacancy.applicationStatus === 'interview').length,
+        vacancies.filter((vacancy) => vacancy.applicationStatus === 'interview').length,
+        vacancies.filter((vacancy) => vacancy.applicationStatus === 'interview').length > 0 ? 'up' : 'neutral'
       ),
-      this.metric('interviews', vacancies.filter((vacancy) => vacancy.applicationStatus === 'interview').length, 'up'),
       this.metric(
         'technical-tests',
         vacancies.filter((vacancy) => vacancy.applicationStatus === 'technical_test').length,
+        vacancies.filter((vacancy) => vacancy.applicationStatus === 'technical_test').length,
         'neutral'
       ),
-      this.metric('rejected', vacancies.filter((vacancy) => vacancy.applicationStatus === 'rejected').length, 'down'),
+      this.metric(
+        'rejected',
+        vacancies.filter((vacancy) => vacancy.applicationStatus === 'rejected').length,
+        rejectedThisMonth,
+        rejectedThisMonth > 0 ? 'down' : 'neutral'
+      ),
       this.metric(
         'no-response',
         vacancies.filter((vacancy) => vacancy.applicationStatus === 'no_response').length,
-        'down'
+        vacancies.filter((vacancy) => vacancy.applicationStatus === 'no_response').length,
+        vacancies.filter((vacancy) => vacancy.applicationStatus === 'no_response').length > 0 ? 'down' : 'neutral'
       ),
-      this.metric('followups', vacancies.filter((vacancy) => vacancy.followUpPending).length, 'neutral')
+      this.metric('followups', vacancies.filter((vacancy) => vacancy.followUpPending).length, dueThisWeek, 'neutral')
     ];
 
     const monthlyApplications = this.buildMonthlyApplications(vacancies, now);
@@ -68,7 +125,7 @@ export class DashboardAnalyticsService {
       title: vacancy.company,
       detail: `${vacancy.position} · ${this.toDashboardStatus(vacancy.applicationStatus)}`,
       type: this.activityType(vacancy.applicationStatus),
-      occurredAt: vacancy.lastUpdatedAt
+      occurredAt: vacancy.updatedAt
     }));
 
     const nextActions = sortedByLastUpdate
@@ -78,7 +135,7 @@ export class DashboardAnalyticsService {
         id: `next-${vacancy.id}`,
         title: 'Follow up with recruiter',
         company: vacancy.company,
-        dueDate: vacancy.nextFollowUpDate ?? this.addDays(vacancy.lastUpdatedAt, 7),
+        dueDate: vacancy.nextFollowUpDate ?? this.addDays(vacancy.updatedAt, 7),
         priority: this.toDashboardPriority(vacancy.priority)
       }));
 
@@ -88,7 +145,7 @@ export class DashboardAnalyticsService {
       role: vacancy.position,
       status: this.toDashboardStatus(vacancy.applicationStatus),
       priority: this.toDashboardPriority(vacancy.priority),
-      updatedAt: vacancy.lastUpdatedAt
+      updatedAt: vacancy.updatedAt
     }));
 
     const topCompanies = this.buildTopCompanies(sortedByLastUpdate);
@@ -117,9 +174,18 @@ export class DashboardAnalyticsService {
   private metric(
     id: string,
     value: number,
+    trendValue: number,
     trendDirection: 'up' | 'down' | 'neutral'
   ): DashboardAnalytics['metrics'][number] {
-    return { id, label: id, value, trendLabel: '', trendDirection };
+    return { id, label: id, value, trendLabel: '', trendValue, trendDirection };
+  }
+
+  private countApplied(vacancies: Vacancy[]): number {
+    return vacancies.filter((vacancy) =>
+      ['applied', 'in_review', 'hr_contact', 'interview', 'technical_test', 'finalist', 'hired'].includes(
+        vacancy.applicationStatus
+      )
+    ).length;
   }
 
   private buildMonthlyApplications(vacancies: Vacancy[], now: Date): DashboardAnalytics['monthlyApplications'] {
@@ -209,15 +275,15 @@ export class DashboardAnalyticsService {
         companies.set(vacancy.company, {
           touches: 1,
           currentStatus: status,
-          lastContactAt: vacancy.lastUpdatedAt
+          lastContactAt: vacancy.updatedAt
         });
         return;
       }
 
       company.touches += 1;
 
-      if (new Date(vacancy.lastUpdatedAt).getTime() > new Date(company.lastContactAt).getTime()) {
-        company.lastContactAt = vacancy.lastUpdatedAt;
+      if (new Date(vacancy.updatedAt).getTime() > new Date(company.lastContactAt).getTime()) {
+        company.lastContactAt = vacancy.updatedAt;
         company.currentStatus = status;
       }
     });
@@ -235,6 +301,8 @@ export class DashboardAnalyticsService {
 
   private toDashboardStatus(status: Vacancy['applicationStatus']): DashboardStatus {
     const map: Record<Vacancy['applicationStatus'], DashboardStatus> = {
+      draft: 'Pending',
+      saved: 'Pending',
       pending: 'Pending',
       cv_sent: 'CV Sent',
       applied: 'Applied',
@@ -242,10 +310,13 @@ export class DashboardAnalyticsService {
       hr_contact: 'HR Contact',
       interview: 'Interview',
       technical_test: 'Technical Test',
+      offer: 'Finalist',
       finalist: 'Finalist',
       rejected: 'Rejected',
+      withdrawn: 'Rejected',
       no_response: 'No Response',
-      hired: 'Hired'
+      hired: 'Hired',
+      archived: 'No Response'
     };
 
     return map[status];

@@ -2,6 +2,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { animate, query, stagger, style, transition, trigger } from '@angular/animations';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -28,6 +29,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { dashboardStatusToTranslationKey } from '../../../../shared/utils/label-mappers';
 import { DashboardAnalyticsService } from '../../services/dashboard-analytics.service';
 import { VacancyService } from '../../../vacancies/services/vacancy.service';
+import { VacancyFollowUp } from '../../../../core/models/vacancy-followup.model';
 import {
   CompanyInteraction,
   DashboardAnalytics,
@@ -77,6 +79,18 @@ interface HorizontalBarOptions {
 }
 
 type ChartKey = 'applications' | 'status' | 'modality' | 'stack';
+type FollowUpStatus = VacancyFollowUp['status'];
+
+interface DashboardFollowUpItem {
+  id: string;
+  vacancyId: string;
+  company: string;
+  position: string;
+  subject: string;
+  plannedDate: string;
+  status: FollowUpStatus;
+  overdue: boolean;
+}
 
 @Component({
   selector: 'app-dashboard-page',
@@ -88,7 +102,8 @@ type ChartKey = 'applications' | 'status' | 'modality' | 'stack';
     MatButtonModule,
     MatChipsModule,
     NgApexchartsModule,
-    TranslatePipe
+    TranslatePipe,
+    RouterLink
   ],
   templateUrl: './dashboard.page.html',
   styleUrl: './dashboard.page.scss',
@@ -121,8 +136,34 @@ export class DashboardPageComponent {
   private readonly loaderMinDurationMs = 120;
 
   private readonly vacancies = toSignal(this.vacancyService.watchAll(), { initialValue: [] });
+  private readonly followUps = toSignal(this.vacancyService.watchFollowUps(), { initialValue: [] as VacancyFollowUp[] });
   protected readonly analytics = computed<DashboardAnalytics>(() => this.analyticsService.buildAnalytics(this.vacancies()));
   protected readonly hasData = computed(() => this.vacancies().length > 0);
+  protected readonly hasFollowUpData = computed(() => this.followUps().length > 0);
+  protected readonly globalFollowUps = computed<DashboardFollowUpItem[]>(() => {
+    const vacancyMap = new Map(this.vacancies().map((vacancy) => [vacancy.id, vacancy]));
+    const now = Date.now();
+
+    return this.followUps()
+      .filter((followUp) => followUp.status !== 'cancelled')
+      .sort((left, right) => new Date(left.plannedDate).getTime() - new Date(right.plannedDate).getTime())
+      .slice(0, 6)
+      .map((followUp) => {
+        const vacancy = vacancyMap.get(followUp.vacancyId);
+        const plannedTs = new Date(followUp.plannedDate).getTime();
+
+        return {
+          id: followUp.id,
+          vacancyId: followUp.vacancyId,
+          company: vacancy?.company ?? this.i18nService.translate('common.notAvailable'),
+          position: vacancy?.position ?? this.i18nService.translate('common.notAvailable'),
+          subject: followUp.subject || this.i18nService.translate('vacancies.followups.defaultSubject'),
+          plannedDate: followUp.plannedDate,
+          status: followUp.status,
+          overdue: followUp.status === 'pending' && plannedTs < now
+        };
+      });
+  });
   protected readonly kpiMetrics = computed<KpiMetric[]>(() => this.analytics().metrics);
   protected readonly nextActions = computed<NextAction[]>(() => this.analytics().nextActions);
   protected readonly recentVacancies = computed<RecentVacancy[]>(() => this.analytics().recentVacancies);
@@ -205,17 +246,31 @@ export class DashboardPageComponent {
       return this.i18nService.translate('dashboard.noDataYet');
     }
 
-    const map: Record<string, TranslationKey> = {
-      'total-vacancies': 'dashboard.kpi.totalVacanciesTrend',
-      'cv-sent': 'dashboard.kpi.cvSentTrend',
-      applied: 'dashboard.kpi.appliedTrend',
-      interviews: 'dashboard.kpi.interviewsTrend',
-      'technical-tests': 'dashboard.kpi.technicalTestsTrend',
-      rejected: 'dashboard.kpi.rejectedTrend',
-      'no-response': 'dashboard.kpi.noResponseTrend',
-      followups: 'dashboard.kpi.pendingFollowUpsTrend'
-    };
-    return this.i18nService.translate(map[metricId] ?? 'dashboard.kpi.totalVacanciesTrend');
+    const metric = this.kpiMetrics().find((item) => item.id === metricId);
+    const trendValue = metric?.trendValue ?? 0;
+    const signedTrend = trendValue > 0 ? `+${trendValue}` : `${trendValue}`;
+    const negativeTrend = trendValue > 0 ? `-${trendValue}` : '0';
+
+    switch (metricId) {
+      case 'total-vacancies':
+        return this.i18nService.translate('dashboard.kpi.trend.thisMonth', { value: signedTrend });
+      case 'cv-sent':
+        return this.i18nService.translate('dashboard.kpi.trend.vsLastMonth', { value: signedTrend });
+      case 'applied':
+        return this.i18nService.translate('dashboard.kpi.trend.active', { value: trendValue });
+      case 'interviews':
+        return this.i18nService.translate('dashboard.kpi.trend.scheduled', { value: trendValue });
+      case 'technical-tests':
+        return this.i18nService.translate('dashboard.kpi.trend.pendingReview', { value: trendValue });
+      case 'rejected':
+        return this.i18nService.translate('dashboard.kpi.trend.thisMonth', { value: negativeTrend });
+      case 'no-response':
+        return this.i18nService.translate('dashboard.kpi.trend.afterFollowUps', { value: negativeTrend });
+      case 'followups':
+        return this.i18nService.translate('dashboard.kpi.trend.thisWeek', { value: trendValue });
+      default:
+        return this.i18nService.translate('dashboard.kpi.trend.vsLastMonth', { value: signedTrend });
+    }
   }
 
   protected statusLabel(status: string): string {
@@ -229,6 +284,32 @@ export class DashboardPageComponent {
       High: 'priority.high'
     };
     return this.i18nService.translate(map[priority]);
+  }
+
+  protected followUpStatusLabel(status: FollowUpStatus): string {
+    return this.i18nService.translate(`vacancies.followups.status.${status}`);
+  }
+
+  protected followUpStatusClass(status: FollowUpStatus, overdue: boolean): string {
+    if (overdue) {
+      return 'followup-overdue';
+    }
+
+    return `followup-${status}`;
+  }
+
+  protected markFollowUpCompleted(followUpId: string): void {
+    this.vacancyService.updateFollowUp(followUpId, {
+      status: 'completed',
+      completedAt: new Date().toISOString()
+    });
+  }
+
+  protected reopenFollowUp(followUpId: string): void {
+    this.vacancyService.updateFollowUp(followUpId, {
+      status: 'pending',
+      completedAt: null
+    });
   }
 
   private buildApplicationsChart(): AreaChartOptions {

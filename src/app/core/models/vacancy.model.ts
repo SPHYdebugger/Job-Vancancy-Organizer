@@ -1,52 +1,103 @@
+export type VacancyModality = 'remote' | 'hybrid' | 'on_site';
+
 export type VacancyStatus =
-  | 'pending'
+  | 'draft'
+  | 'saved'
   | 'cv_sent'
   | 'applied'
   | 'in_review'
   | 'hr_contact'
   | 'interview'
   | 'technical_test'
+  | 'offer'
   | 'finalist'
+  | 'hired'
   | 'rejected'
+  | 'withdrawn'
   | 'no_response'
-  | 'hired';
+  | 'archived'
+  | 'pending';
 
-export type VacancyPriority = 'low' | 'medium' | 'high';
+export type CompanyResponseStatus = 'none' | 'pending' | 'positive' | 'negative';
 
-export type WorkModality = 'remote' | 'hybrid' | 'on_site';
+export type PriorityLevel = 'low' | 'medium' | 'high';
 
-export type CompanyResponseState = 'none' | 'pending' | 'positive' | 'negative';
+export type EmploymentType =
+  | 'full_time'
+  | 'part_time'
+  | 'contract'
+  | 'freelance'
+  | 'internship'
+  | 'temporary'
+  | 'other';
+
+export type SeniorityLevel = 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'manager' | 'unknown';
+
+// Backward compatible aliases used by the current UI layer.
+export type WorkModality = VacancyModality;
+export type VacancyPriority = PriorityLevel;
+export type CompanyResponseState = CompanyResponseStatus;
 
 export interface Vacancy {
   id: string;
+
+  // Audit
   createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
+  closedAt: string | null;
+
+  // Job data
   company: string;
   position: string;
   domain: string;
+  location: string;
   headquarters: string;
-  modality: WorkModality;
+  modality: VacancyModality;
+  employmentType: EmploymentType;
+  seniority: SeniorityLevel;
+
+  // Offer
   techStack: string[];
-  salary: string;
+  salaryText: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string | null;
+
+  // Source
   offerSource: string;
+  sourceType: 'job_board' | 'recruiter' | 'referral' | 'company_site' | 'networking' | 'other';
   offerUrl: string;
   companyUrl: string;
+
+  // Contact
   contactName: string;
-  contactDate: string | null;
-  message: string;
-  cvSent: boolean;
-  responseReceived: boolean;
+  contactEmail: string;
+  contactLinkedin: string;
+  lastContactAt: string | null;
+
+  // Current state
   applicationStatus: VacancyStatus;
   processStage: string;
-  priority: VacancyPriority;
+  companyResponse: CompanyResponseStatus;
+  priority: PriorityLevel;
+
+  // Key dates
+  discoveredAt: string | null;
   applicationDate: string | null;
-  lastUpdatedAt: string;
-  interviewCompleted: boolean;
-  technicalInterview: boolean;
-  companyResponse: CompanyResponseState;
-  rejected: boolean;
-  rejectionReason: string;
-  followUpPending: boolean;
+  lastStatusChangeAt: string | null;
   nextFollowUpDate: string | null;
+
+  // Flags
+  followUpPending: boolean;
+  favorite: boolean;
+  archived: boolean;
+
+  // Closure
+  rejectionReason: string;
+  closureReason: string;
+
+  // Notes
   notes: string;
   hrObservations: string;
   tags: string[];

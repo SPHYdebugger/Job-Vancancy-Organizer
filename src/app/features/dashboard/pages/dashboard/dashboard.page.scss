@@ -87,6 +87,10 @@
   grid-column: span 8;
 }
 
+.panel-quarter {
+  grid-column: span 6;
+}
+
 .panel-full {
   grid-column: span 12;
 }
@@ -179,7 +183,8 @@
 
 .activity-list,
 .actions-list,
-.companies-list {
+.companies-list,
+.followups-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -189,7 +194,8 @@
 
 .activity-list li,
 .actions-list li,
-.companies-list li {
+.companies-list li,
+.followups-list li {
   border: 1px solid var(--border-soft);
   border-radius: 12px;
   padding: 0.68rem 0.75rem;
@@ -198,7 +204,8 @@
 
 .activity-title,
 .action-title,
-.company-name {
+.company-name,
+.followup-subject {
   color: var(--text-primary);
   font-weight: 700;
   margin: 0;
@@ -207,9 +214,16 @@
 
 .activity-detail,
 .action-company,
-.company-meta {
+.company-meta,
+.followup-meta {
   margin: 0.2rem 0 0;
   font-size: 0.8rem;
+}
+
+.followup-date {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
 .activity-time {
@@ -219,7 +233,8 @@
 }
 
 .actions-list li,
-.companies-list li {
+.companies-list li,
+.followups-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -237,6 +252,20 @@
   font-size: 0.75rem;
   color: #64748b;
   font-weight: 600;
+}
+
+.followup-actions {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+
+  button,
+  a {
+    min-width: 84px;
+    height: 30px;
+    padding-inline: 0.6rem;
+    font-size: 0.72rem;
+  }
 }
 
 .table-like {
@@ -314,12 +343,33 @@
   background: rgba(248, 113, 113, 0.12);
 }
 
+.followup-pending {
+  color: #1d4ed8;
+  border-color: rgba(29, 78, 216, 0.25);
+  background: rgba(29, 78, 216, 0.1);
+}
+
+.followup-completed {
+  color: #0f766e;
+  border-color: rgba(15, 118, 110, 0.25);
+  background: rgba(15, 118, 110, 0.1);
+}
+
+.followup-expired,
+.followup-overdue,
+.followup-cancelled {
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.25);
+  background: rgba(185, 28, 28, 0.1);
+}
+
 @media (max-width: 1360px) {
   .kpi-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .panel,
+  .panel-quarter,
   .panel-wide {
     grid-column: span 6;
   }
@@ -360,8 +410,14 @@
   }
 
   .actions-list li,
-  .companies-list li {
+  .companies-list li,
+  .followups-list li {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .followup-actions {
+    width: 100%;
+    justify-items: start;
   }
 }
