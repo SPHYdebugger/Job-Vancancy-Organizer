@@ -40,6 +40,7 @@ export type CompanyResponseState = CompanyResponseStatus;
 
 export interface Vacancy {
   id: string;
+  deletedAt: string | null;
 
   // Audit
   createdAt: string;

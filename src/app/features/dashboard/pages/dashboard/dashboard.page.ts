@@ -1,7 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { animate, query, stagger, style, transition, trigger } from '@angular/animations';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -28,8 +27,9 @@ import { TranslationKey } from '../../../../core/i18n/translations';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { dashboardStatusToTranslationKey } from '../../../../shared/utils/label-mappers';
 import { DashboardAnalyticsService } from '../../services/dashboard-analytics.service';
-import { VacancyService } from '../../../vacancies/services/vacancy.service';
+import { VacancyService, DashboardSnapshot } from '../../../vacancies/services/vacancy.service';
 import { VacancyFollowUp } from '../../../../core/models/vacancy-followup.model';
+import { DashboardPreAggregates, createEmptyDashboardPreAggregates } from '../../../../core/models/dashboard-pre-aggregates.model';
 import {
   CompanyInteraction,
   DashboardAnalytics,
@@ -39,6 +39,7 @@ import {
   RecentVacancy,
   StackPoint
 } from '../../models/dashboard-analytics.model';
+import { DashboardVacancyDto } from '../../../vacancies/models/vacancy-list-item.dto';
 
 interface AreaChartOptions {
   series: ApexAxisChartSeries;
@@ -107,27 +108,7 @@ interface DashboardFollowUpItem {
   ],
   templateUrl: './dashboard.page.html',
   styleUrl: './dashboard.page.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  animations: [
-    trigger('staggerCards', [
-      transition(':enter', [
-        query(
-          '.kpi-card',
-          [
-            style({ opacity: 0, transform: 'translateY(14px)' }),
-            stagger(70, animate('320ms cubic-bezier(0.2, 0, 0, 1)', style({ opacity: 1, transform: 'translateY(0)' })))
-          ],
-          { optional: true }
-        )
-      ])
-    ]),
-    trigger('fadeSlide', [
-      transition(':enter', [
-        style({ opacity: 0, transform: 'translateY(10px)' }),
-        animate('300ms 70ms cubic-bezier(0.2, 0, 0, 1)', style({ opacity: 1, transform: 'translateY(0)' }))
-      ])
-    ])
-  ]
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardPageComponent {
   private readonly analyticsService = inject(DashboardAnalyticsService);
@@ -135,9 +116,20 @@ export class DashboardPageComponent {
   private readonly i18nService = inject(I18nService);
   private readonly loaderMinDurationMs = 120;
 
-  private readonly vacancies = toSignal(this.vacancyService.watchAll(), { initialValue: [] });
-  private readonly followUps = toSignal(this.vacancyService.watchFollowUps(), { initialValue: [] as VacancyFollowUp[] });
-  protected readonly analytics = computed<DashboardAnalytics>(() => this.analyticsService.buildAnalytics(this.vacancies()));
+  private readonly snapshot = toSignal(this.vacancyService.watchDashboardSnapshot(), {
+    initialValue: {
+      vacancies: [] as DashboardVacancyDto[],
+      preAggregates: createEmptyDashboardPreAggregates() as DashboardPreAggregates,
+      followUps: [] as VacancyFollowUp[]
+    } satisfies DashboardSnapshot
+  });
+
+  private readonly vacancies = computed(() => this.snapshot().vacancies);
+  private readonly preAggregates = computed(() => this.snapshot().preAggregates);
+  private readonly followUps = computed(() => this.snapshot().followUps);
+  protected readonly analytics = computed<DashboardAnalytics>(() =>
+    this.analyticsService.buildAnalytics(this.vacancies(), this.preAggregates())
+  );
   protected readonly hasData = computed(() => this.vacancies().length > 0);
   protected readonly hasFollowUpData = computed(() => this.followUps().length > 0);
   protected readonly globalFollowUps = computed<DashboardFollowUpItem[]>(() => {

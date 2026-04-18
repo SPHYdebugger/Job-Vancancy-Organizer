@@ -234,6 +234,7 @@ export class VacancyFormPageComponent {
 
     const newVacancy: Vacancy = {
       id: crypto.randomUUID(),
+      deletedAt: null,
       createdAt: now,
       updatedAt: now,
       archivedAt: null,

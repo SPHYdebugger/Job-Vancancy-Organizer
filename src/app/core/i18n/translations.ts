@@ -172,6 +172,11 @@ export const enTranslations = {
   'vacancies.list.emptyTitle': 'No vacancies match your current filters',
   'vacancies.list.emptyDescription': 'Try resetting filters or importing additional data from Excel.',
   'vacancies.list.noDataTitle': 'No data',
+  'vacancies.list.exportExcel': 'Export to Excel',
+  'vacancies.list.exportNoData': 'There is no data to export.',
+  'vacancies.list.exportSuccess':
+    'Excel exported: {{vacancies}} vacancies, {{events}} events, {{followUps}} follow-ups.',
+  'vacancies.list.exportFailed': 'Export failed. Please try again.',
   'vacancies.list.deleteConfirm': 'Delete "{{company}} - {{position}}"?',
   'vacancies.list.deleted': 'Vacancy deleted.',
   'vacancies.deleteDialog.title': 'Confirm deletion',
@@ -529,6 +534,11 @@ export const esTranslations: Record<TranslationKey, string> = {
   'vacancies.list.emptyTitle': 'No hay vacantes con los filtros actuales',
   'vacancies.list.emptyDescription': 'Prueba a resetear filtros o importar más datos desde Excel.',
   'vacancies.list.noDataTitle': 'Sin datos',
+  'vacancies.list.exportExcel': 'Exportar a Excel',
+  'vacancies.list.exportNoData': 'No hay datos para exportar.',
+  'vacancies.list.exportSuccess':
+    'Excel exportado: {{vacancies}} vacantes, {{events}} eventos, {{followUps}} follow-ups.',
+  'vacancies.list.exportFailed': 'Error al exportar. Inténtalo de nuevo.',
   'vacancies.list.deleteConfirm': '¿Eliminar "{{company}} - {{position}}"?',
   'vacancies.list.deleted': 'Vacante eliminada.',
   'vacancies.deleteDialog.title': 'Confirmar eliminación',

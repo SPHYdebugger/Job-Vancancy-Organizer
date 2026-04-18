@@ -18,6 +18,8 @@ import { Vacancy } from '../../../../core/models/vacancy.model';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ConfirmationDialogComponent } from '../../../../shared/ui/confirmation-dialog/confirmation-dialog.component';
 import { modalityToTranslationKey, priorityToTranslationKey, statusToTranslationKey } from '../../../../shared/utils/label-mappers';
+import { VacancyListItemDto } from '../../models/vacancy-list-item.dto';
+import { VacancyExcelExportService } from '../../services/vacancy-excel-export.service';
 import { VacancyService } from '../../services/vacancy.service';
 
 type SortOption =
@@ -75,6 +77,7 @@ interface VacancyFilters {
 export class VacanciesListPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly vacancyService = inject(VacancyService);
+  private readonly vacancyExcelExportService = inject(VacancyExcelExportService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly i18nService = inject(I18nService);
@@ -103,8 +106,8 @@ export class VacanciesListPageComponent {
     pageSize: 8
   });
 
-  protected readonly vacancies = toSignal(this.vacancyService.watchAll(), {
-    initialValue: [] as Vacancy[]
+  protected readonly vacancies = toSignal(this.vacancyService.watchAppliedListItems(), {
+    initialValue: [] as VacancyListItemDto[]
   });
 
   private readonly filters = toSignal(
@@ -169,11 +172,11 @@ export class VacanciesListPageComponent {
     });
   }
 
-  protected trackById(_: number, vacancy: Vacancy): string {
+  protected trackById(_: number, vacancy: VacancyListItemDto): string {
     return vacancy.id;
   }
 
-  protected async deleteVacancy(vacancy: Vacancy): Promise<void> {
+  protected async deleteVacancy(vacancy: VacancyListItemDto): Promise<void> {
     const shouldDelete = await this.confirmAction(
       this.i18nService.translate('vacancies.list.deleteConfirm', {
         company: vacancy.company,
@@ -189,6 +192,49 @@ export class VacanciesListPageComponent {
     this.snackBar.open(this.i18nService.translate('vacancies.list.deleted'), this.i18nService.translate('common.close'), {
       duration: 2500
     });
+  }
+
+  protected exportFilteredToExcel(): void {
+    const filteredVacancies = this.filteredVacancies();
+    if (filteredVacancies.length === 0) {
+      this.snackBar.open(
+        this.i18nService.translate('vacancies.list.exportNoData'),
+        this.i18nService.translate('common.close'),
+        { duration: 2800 }
+      );
+      return;
+    }
+
+    const vacancyIds = new Set(filteredVacancies.map((vacancy) => vacancy.id));
+    const fullVacancies = this.vacancyService.getAll().filter((vacancy) => vacancyIds.has(vacancy.id));
+    const filteredEvents = this.vacancyService.getEvents().filter((event) => vacancyIds.has(event.vacancyId));
+    const filteredFollowUps = this.vacancyService
+      .getFollowUps()
+      .filter((followUp) => vacancyIds.has(followUp.vacancyId));
+
+    try {
+      this.vacancyExcelExportService.exportSnapshot({
+        vacancies: fullVacancies,
+        events: filteredEvents,
+        followUps: filteredFollowUps
+      });
+
+      this.snackBar.open(
+        this.i18nService.translate('vacancies.list.exportSuccess', {
+          vacancies: fullVacancies.length,
+          events: filteredEvents.length,
+          followUps: filteredFollowUps.length
+        }),
+        this.i18nService.translate('common.close'),
+        { duration: 3800 }
+      );
+    } catch {
+      this.snackBar.open(
+        this.i18nService.translate('vacancies.list.exportFailed'),
+        this.i18nService.translate('common.close'),
+        { duration: 3500 }
+      );
+    }
   }
 
   private async confirmAction(message: string): Promise<boolean> {
@@ -270,7 +316,7 @@ export class VacanciesListPageComponent {
     this.currentPage.update((value) => value + 1);
   }
 
-  private applyFilters(vacancies: Vacancy[], filters: VacancyFilters): Vacancy[] {
+  private applyFilters(vacancies: VacancyListItemDto[], filters: VacancyFilters): VacancyListItemDto[] {
     const searchTerm = filters.search.trim().toLowerCase();
     const fromTimestamp = filters.fromDate ? Date.parse(filters.fromDate) : null;
     const toTimestamp = filters.toDate ? Date.parse(filters.toDate) : null;
@@ -346,7 +392,7 @@ export class VacanciesListPageComponent {
     return filtered.sort((left, right) => this.compareVacancies(left, right, filters.sortBy));
   }
 
-  private compareVacancies(left: Vacancy, right: Vacancy, sortBy: SortOption): number {
+  private compareVacancies(left: VacancyListItemDto, right: VacancyListItemDto, sortBy: SortOption): number {
     const leftUpdated = Date.parse(left.updatedAt);
     const rightUpdated = Date.parse(right.updatedAt);
     const leftApplication = Date.parse(left.applicationDate || left.createdAt);

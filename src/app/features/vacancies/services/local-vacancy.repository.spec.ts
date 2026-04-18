@@ -12,6 +12,7 @@ describe('LocalVacancyRepository', () => {
 
   const fakeVacancy: Vacancy = {
     id: 'vac-test-001',
+    deletedAt: null,
     createdAt: '2026-04-10T10:00:00.000Z',
     updatedAt: '2026-04-10T10:00:00.000Z',
     archivedAt: null,

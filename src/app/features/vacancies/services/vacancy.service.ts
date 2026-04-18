@@ -1,10 +1,19 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map, shareReplay } from 'rxjs/operators';
 
 import { VacancyEvent } from '../../../core/models/vacancy-event.model';
 import { VacancyFollowUp } from '../../../core/models/vacancy-followup.model';
 import { CompanyResponseStatus, Vacancy, VacancyStatus } from '../../../core/models/vacancy.model';
+import { DashboardPreAggregates } from '../../../core/models/dashboard-pre-aggregates.model';
 import { VACANCY_REPOSITORY } from '../../../core/services/vacancy-repository.token';
+import { DashboardVacancyDto, VacancyListItemDto } from '../models/vacancy-list-item.dto';
+
+export interface DashboardSnapshot {
+  vacancies: DashboardVacancyDto[];
+  preAggregates: DashboardPreAggregates;
+  followUps: VacancyFollowUp[];
+}
 
 export interface RecordVacancyEventInput {
   type: VacancyEvent['type'];
@@ -37,9 +46,32 @@ export interface RecordVacancyEventInput {
 })
 export class VacancyService {
   private readonly vacancyRepository = inject(VACANCY_REPOSITORY);
+  private readonly readModel$ = this.vacancyRepository.watchReadModel().pipe(
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+  private readonly appliedListItems$ = this.readModel$.pipe(
+    map((state) => state.vacancies.map((vacancy) => this.toVacancyListItem(vacancy))),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+  private readonly dashboardSnapshot$ = this.readModel$.pipe(
+    map((state) => ({
+      vacancies: state.vacancies.map((vacancy) => this.toDashboardVacancy(vacancy)),
+      preAggregates: state.preAggregates,
+      followUps: state.followUps
+    })),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+
+  public watchDashboardSnapshot(): Observable<DashboardSnapshot> {
+    return this.dashboardSnapshot$;
+  }
 
   public watchAll(): Observable<Vacancy[]> {
-    return this.vacancyRepository.watchAll();
+    return this.readModel$.pipe(map((state) => state.vacancies));
+  }
+
+  public watchAppliedListItems(): Observable<VacancyListItemDto[]> {
+    return this.appliedListItems$;
   }
 
   public watchEvents(vacancyId?: string): Observable<VacancyEvent[]> {
@@ -54,6 +86,10 @@ export class VacancyService {
     return this.vacancyRepository.getAll();
   }
 
+  public getAppliedListItems(): VacancyListItemDto[] {
+    return this.vacancyRepository.getAll().map((vacancy) => this.toVacancyListItem(vacancy));
+  }
+
   public getById(id: string): Vacancy | undefined {
     return this.vacancyRepository.getById(id);
   }
@@ -64,6 +100,10 @@ export class VacancyService {
 
   public getFollowUps(vacancyId?: string): VacancyFollowUp[] {
     return this.vacancyRepository.getFollowUps(vacancyId);
+  }
+
+  public getDashboardPreAggregates(): DashboardPreAggregates {
+    return this.vacancyRepository.getDashboardPreAggregates();
   }
 
   public create(vacancy: Vacancy): void {
@@ -148,6 +188,7 @@ export class VacancyService {
 
     this.vacancyRepository.createEvent({
       id: `evt_${crypto.randomUUID()}`,
+      deletedAt: null,
       vacancyId,
       type: input.type,
       title: input.title,
@@ -279,5 +320,44 @@ export class VacancyService {
       details
     });
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  }
+
+  private toVacancyListItem(vacancy: Vacancy): VacancyListItemDto {
+    return {
+      id: vacancy.id,
+      company: vacancy.company,
+      position: vacancy.position,
+      domain: vacancy.domain,
+      headquarters: vacancy.headquarters,
+      contactName: vacancy.contactName,
+      notes: vacancy.notes,
+      tags: vacancy.tags,
+      techStack: vacancy.techStack,
+      applicationStatus: vacancy.applicationStatus,
+      modality: vacancy.modality,
+      priority: vacancy.priority,
+      applicationDate: vacancy.applicationDate,
+      createdAt: vacancy.createdAt,
+      updatedAt: vacancy.updatedAt
+    };
+  }
+
+  private toDashboardVacancy(vacancy: Vacancy): DashboardVacancyDto {
+    return {
+      id: vacancy.id,
+      company: vacancy.company,
+      position: vacancy.position,
+      techStack: vacancy.techStack,
+      applicationStatus: vacancy.applicationStatus,
+      modality: vacancy.modality,
+      priority: vacancy.priority,
+      createdAt: vacancy.createdAt,
+      discoveredAt: vacancy.discoveredAt,
+      applicationDate: vacancy.applicationDate,
+      updatedAt: vacancy.updatedAt,
+      followUpPending: vacancy.followUpPending,
+      nextFollowUpDate: vacancy.nextFollowUpDate,
+      lastStatusChangeAt: vacancy.lastStatusChangeAt
+    };
   }
 }

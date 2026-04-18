@@ -20,6 +20,7 @@ export class VacancyMapperService {
 
     return {
       id,
+      deletedAt: null,
       createdAt: applicationDate ?? now,
       updatedAt: now,
       archivedAt: null,

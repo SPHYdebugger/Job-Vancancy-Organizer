@@ -24,6 +24,7 @@ export type VacancyEventType =
 
 export interface VacancyEvent {
   id: string;
+  deletedAt: string | null;
   vacancyId: string;
   type: VacancyEventType;
   title: string;
@@ -47,4 +48,3 @@ export interface VacancyEvent {
     customFields?: Record<string, unknown>;
   };
 }
-

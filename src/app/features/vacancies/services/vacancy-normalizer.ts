@@ -12,6 +12,7 @@ export function normalizeVacancy(input: Partial<Vacancy> & Record<string, unknow
 
   return {
     id: asString(input.id) ?? crypto.randomUUID(),
+    deletedAt: asNullableString(input.deletedAt) ?? asNullableString(input['deleted_at']),
     createdAt,
     updatedAt,
     archivedAt: asNullableString(input.archivedAt),
@@ -59,6 +60,7 @@ export function normalizeVacancy(input: Partial<Vacancy> & Record<string, unknow
 export function createDefaultEvent(vacancy: Vacancy, actorId: string | null): VacancyEvent {
   return {
     id: `evt_${crypto.randomUUID()}`,
+    deletedAt: null,
     vacancyId: vacancy.id,
     type: 'created',
     title: 'Vacancy created',

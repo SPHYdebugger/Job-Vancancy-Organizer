@@ -1,4 +1,4 @@
-<section class="dashboard" [@staggerCards]>
+<section class="dashboard">
   <section class="kpi-grid" aria-label="Key metrics">
     @for (metric of kpiMetrics(); track metric.id) {
       <article class="kpi-card surface-card">
@@ -11,7 +11,7 @@
     }
   </section>
 
-  <section class="dashboard-main" [@fadeSlide]>
+  <section class="dashboard-main">
     <article class="panel panel-wide surface-card">
       <div class="panel-header">
         <div>
@@ -139,7 +139,6 @@
       </div>
     </article>
 
-    @defer (on idle) {
       <article class="panel panel-quarter surface-card">
         <div class="panel-header">
           <div>
@@ -277,7 +276,6 @@
           </div>
         </div>
 
-        @defer (on idle) {
           <div class="table-like" role="table" [attr.aria-label]="'dashboard.table.recentVacanciesAria' | t">
             <div class="table-head" role="row">
               <span>{{ 'dashboard.table.company' | t }}</span>
@@ -307,34 +305,6 @@
               }
             }
           </div>
-        } @placeholder {
-          <div class="panel-loader-overlay">
-            <span class="chart-spinner" aria-hidden="true"></span>
-          </div>
-        }
       </article>
-
-    } @placeholder {
-      <article class="panel surface-card panel-placeholder">
-        <div class="panel-loader-overlay">
-          <span class="chart-spinner" aria-hidden="true"></span>
-        </div>
-      </article>
-      <article class="panel surface-card panel-placeholder">
-        <div class="panel-loader-overlay">
-          <span class="chart-spinner" aria-hidden="true"></span>
-        </div>
-      </article>
-      <article class="panel surface-card panel-placeholder">
-        <div class="panel-loader-overlay">
-          <span class="chart-spinner" aria-hidden="true"></span>
-        </div>
-      </article>
-      <article class="panel panel-full surface-card panel-placeholder">
-        <div class="panel-loader-overlay">
-          <span class="chart-spinner" aria-hidden="true"></span>
-        </div>
-      </article>
-    }
   </section>
 </section>
