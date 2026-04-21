@@ -13,6 +13,8 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import {
   CompanyResponseState,
+  EmploymentType,
+  SeniorityLevel,
   Vacancy,
   VacancyPriority,
   VacancyStatus,
@@ -87,6 +89,24 @@ export class VacancyFormPageComponent {
   ];
   protected readonly priorityOptions: VacancyPriority[] = ['low', 'medium', 'high'];
   protected readonly modalityOptions: WorkModality[] = ['remote', 'hybrid', 'on_site'];
+  protected readonly employmentTypeOptions: EmploymentType[] = [
+    'full_time',
+    'part_time',
+    'contract',
+    'freelance',
+    'internship',
+    'temporary',
+    'other'
+  ];
+  protected readonly seniorityOptions: SeniorityLevel[] = ['intern', 'junior', 'mid', 'senior', 'lead', 'manager', 'unknown'];
+  protected readonly sourceTypeOptions: Vacancy['sourceType'][] = [
+    'job_board',
+    'recruiter',
+    'referral',
+    'company_site',
+    'networking',
+    'other'
+  ];
   protected readonly companyResponseOptions: CompanyResponseState[] = [
     'none',
     'pending',
@@ -102,21 +122,37 @@ export class VacancyFormPageComponent {
     company: ['', [Validators.required, Validators.minLength(2)]],
     position: ['', [Validators.required, Validators.minLength(2)]],
     domain: [''],
+    location: [''],
     headquarters: [''],
     modality: this.formBuilder.nonNullable.control<WorkModality>('remote', Validators.required),
+    employmentType: this.formBuilder.nonNullable.control<EmploymentType>('full_time', Validators.required),
+    seniority: this.formBuilder.nonNullable.control<SeniorityLevel>('unknown', Validators.required),
+    techStack: [''],
     salary: [''],
+    salaryMin: [''],
+    salaryMax: [''],
+    salaryCurrency: [''],
     offerSource: [''],
+    sourceType: this.formBuilder.nonNullable.control<Vacancy['sourceType']>('job_board', Validators.required),
     offerUrl: [''],
     companyUrl: [''],
     contactName: [''],
+    contactEmail: [''],
+    contactLinkedin: [''],
     contactDate: [''],
+    discoveredAt: [''],
     applicationDate: [''],
+    lastStatusChangeAt: [''],
     status: this.formBuilder.nonNullable.control<VacancyStatus>('pending', Validators.required),
     processStage: ['Applied'],
     priority: this.formBuilder.nonNullable.control<VacancyPriority>('medium', Validators.required),
     responseState: this.formBuilder.nonNullable.control<CompanyResponseState>('none', Validators.required),
     followUpPending: this.formBuilder.nonNullable.control(false),
+    favorite: this.formBuilder.nonNullable.control(false),
+    archived: this.formBuilder.nonNullable.control(false),
     nextFollowUpDate: [''],
+    rejectionReason: [''],
+    closureReason: [''],
     notes: [''],
     hrObservations: [''],
     tags: ['']
@@ -244,36 +280,62 @@ export class VacancyFormPageComponent {
       .split(',')
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
+    const techStack = formValue.techStack
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+    const discoveredAtIso = this.toIsoDateTime(formValue.discoveredAt);
+    const contactDateIso = this.toIsoDateTime(formValue.contactDate);
+    const applicationDateIso = this.toIsoDateTime(formValue.applicationDate);
+    const lastStatusChangeAtIso = this.toIsoDateTime(formValue.lastStatusChangeAt);
+    const nextFollowUpDateIso = this.toIsoDateTime(formValue.nextFollowUpDate);
 
     if (this.editingVacancy) {
       this.vacancyService.update(this.editingVacancy.id, {
         company: formValue.company,
         position: formValue.position,
         domain: formValue.domain || null,
+        location: formValue.location || null,
         headquarters: formValue.headquarters || null,
-        location: formValue.headquarters || null,
         modality: formValue.modality,
+        employmentType: formValue.employmentType,
+        seniority: formValue.seniority,
+        techStack,
         salaryText: formValue.salary || null,
+        salaryMin: this.toNullableNumber(formValue.salaryMin),
+        salaryMax: this.toNullableNumber(formValue.salaryMax),
+        salaryCurrency: formValue.salaryCurrency || null,
         offerSource: formValue.offerSource || null,
+        sourceType: formValue.sourceType,
         offerUrl: formValue.offerUrl || null,
         companyUrl: formValue.companyUrl || null,
         contactName: formValue.contactName || null,
-        lastContactAt: formValue.contactDate || null,
-        applicationDate: formValue.applicationDate || null,
+        contactEmail: formValue.contactEmail || null,
+        contactLinkedin: formValue.contactLinkedin || null,
+        lastContactAt: contactDateIso,
+        discoveredAt: discoveredAtIso,
+        applicationDate: applicationDateIso,
+        lastStatusChangeAt: lastStatusChangeAtIso,
         applicationStatus: formValue.status,
         processStage: formValue.processStage || null,
         priority: formValue.priority,
         companyResponse: formValue.responseState,
         followUpPending: formValue.followUpPending,
-        nextFollowUpDate: formValue.nextFollowUpDate || null,
+        favorite: formValue.favorite,
+        archived: formValue.archived,
+        nextFollowUpDate: nextFollowUpDateIso,
+        rejectionReason: formValue.rejectionReason || null,
+        closureReason: formValue.closureReason || null,
         notes: formValue.notes || null,
         hrObservations: formValue.hrObservations || null,
         tags,
         updatedAt: now,
-        lastStatusChangeAt: now,
-        closedAt: formValue.status === 'rejected' || formValue.status === 'hired' ? now : null,
-        closureReason: formValue.status === 'rejected' ? 'rejected' : null,
-        archivedAt: null
+        closedAt:
+          (formValue.status === 'rejected' || formValue.status === 'hired') &&
+          !this.editingVacancy.closedAt
+            ? now
+            : this.editingVacancy.closedAt,
+        archivedAt: formValue.archived ? this.editingVacancy.archivedAt ?? now : null
       });
 
       void this.router.navigate(['/app/vacancies', this.editingVacancy.id]);
@@ -285,42 +347,42 @@ export class VacancyFormPageComponent {
       deletedAt: null,
       createdAt: now,
       updatedAt: now,
-      archivedAt: null,
-      closedAt: null,
+      archivedAt: formValue.archived ? now : null,
+      closedAt: formValue.status === 'rejected' || formValue.status === 'hired' ? now : null,
       company: formValue.company,
       position: formValue.position,
       domain: formValue.domain || null,
-      location: formValue.headquarters || null,
+      location: formValue.location || null,
       headquarters: formValue.headquarters || null,
       modality: formValue.modality,
-      employmentType: 'full_time',
-      seniority: 'unknown',
-      techStack: tags,
+      employmentType: formValue.employmentType,
+      seniority: formValue.seniority,
+      techStack,
       salaryText: formValue.salary || null,
-      salaryMin: null,
-      salaryMax: null,
-      salaryCurrency: null,
+      salaryMin: this.toNullableNumber(formValue.salaryMin),
+      salaryMax: this.toNullableNumber(formValue.salaryMax),
+      salaryCurrency: formValue.salaryCurrency || null,
       offerSource: formValue.offerSource || null,
-      sourceType: 'job_board',
+      sourceType: formValue.sourceType,
       offerUrl: formValue.offerUrl || null,
       companyUrl: formValue.companyUrl || null,
       contactName: formValue.contactName || null,
-      contactEmail: null,
-      contactLinkedin: null,
-      lastContactAt: formValue.contactDate || null,
+      contactEmail: formValue.contactEmail || null,
+      contactLinkedin: formValue.contactLinkedin || null,
+      lastContactAt: contactDateIso,
       applicationStatus: formValue.status,
       processStage: formValue.processStage || null,
       priority: formValue.priority,
       companyResponse: formValue.responseState,
-      discoveredAt: now,
-      applicationDate: formValue.applicationDate || null,
-      lastStatusChangeAt: now,
-      nextFollowUpDate: formValue.nextFollowUpDate || null,
+      discoveredAt: discoveredAtIso ?? now,
+      applicationDate: applicationDateIso,
+      lastStatusChangeAt: lastStatusChangeAtIso ?? now,
+      nextFollowUpDate: nextFollowUpDateIso,
       followUpPending: formValue.followUpPending,
-      favorite: false,
-      archived: false,
-      rejectionReason: null,
-      closureReason: null,
+      favorite: formValue.favorite,
+      archived: formValue.archived,
+      rejectionReason: formValue.rejectionReason || null,
+      closureReason: formValue.closureReason || null,
       notes: formValue.notes || null,
       hrObservations: formValue.hrObservations || null,
       tags
@@ -351,25 +413,79 @@ export class VacancyFormPageComponent {
       company: vacancy.company,
       position: vacancy.position,
       domain: vacancy.domain ?? '',
+      location: vacancy.location ?? '',
       headquarters: vacancy.headquarters ?? '',
       modality: vacancy.modality,
+      employmentType: vacancy.employmentType,
+      seniority: vacancy.seniority,
+      techStack: vacancy.techStack.join(', '),
       salary: vacancy.salaryText ?? '',
+      salaryMin: vacancy.salaryMin !== null ? `${vacancy.salaryMin}` : '',
+      salaryMax: vacancy.salaryMax !== null ? `${vacancy.salaryMax}` : '',
+      salaryCurrency: vacancy.salaryCurrency ?? '',
       offerSource: vacancy.offerSource ?? '',
+      sourceType: vacancy.sourceType,
       offerUrl: vacancy.offerUrl ?? '',
       companyUrl: vacancy.companyUrl ?? '',
       contactName: vacancy.contactName ?? '',
-      contactDate: vacancy.lastContactAt ?? '',
-      applicationDate: vacancy.applicationDate ?? '',
+      contactEmail: vacancy.contactEmail ?? '',
+      contactLinkedin: vacancy.contactLinkedin ?? '',
+      contactDate: this.toLocalDateTimeInput(vacancy.lastContactAt),
+      discoveredAt: this.toLocalDateTimeInput(vacancy.discoveredAt),
+      applicationDate: this.toLocalDateTimeInput(vacancy.applicationDate),
+      lastStatusChangeAt: this.toLocalDateTimeInput(vacancy.lastStatusChangeAt),
       status: vacancy.applicationStatus,
       processStage: vacancy.processStage ?? '',
       priority: vacancy.priority,
       responseState: vacancy.companyResponse,
       followUpPending: vacancy.followUpPending,
-      nextFollowUpDate: vacancy.nextFollowUpDate ?? '',
+      favorite: vacancy.favorite,
+      archived: vacancy.archived,
+      nextFollowUpDate: this.toLocalDateTimeInput(vacancy.nextFollowUpDate),
+      rejectionReason: vacancy.rejectionReason ?? '',
+      closureReason: vacancy.closureReason ?? '',
       notes: vacancy.notes ?? '',
       hrObservations: vacancy.hrObservations ?? '',
       tags: vacancy.tags.join(', ')
     });
+  }
+
+  private toIsoDateTime(value: string): string | null {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+      return null;
+    }
+
+    const parsedDate = new Date(trimmedValue);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return null;
+    }
+
+    return parsedDate.toISOString();
+  }
+
+  private toLocalDateTimeInput(value: string | null): string {
+    if (!value) {
+      return '';
+    }
+
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '';
+    }
+
+    const localDate = new Date(parsedDate.getTime() - parsedDate.getTimezoneOffset() * 60000);
+    return localDate.toISOString().slice(0, 16);
+  }
+
+  private toNullableNumber(value: string): number | null {
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+      return null;
+    }
+
+    const parsed = Number(trimmedValue.replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   private shouldBlockDemoActions(): boolean {

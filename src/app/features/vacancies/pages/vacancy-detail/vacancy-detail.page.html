@@ -26,12 +26,42 @@
         <p>{{ modalityLabel(currentVacancy.modality) }}</p>
       </article>
       <article class="item">
+        <h2>{{ 'vacancies.detail.seniority' | t }}</h2>
+        <p>{{ currentVacancy.seniority || ('common.notAvailable' | t) }}</p>
+      </article>
+      <article class="item">
         <h2>{{ 'vacancies.form.domain' | t }}</h2>
-        <p>{{ currentVacancy.domain }}</p>
+        <p>{{ currentVacancy.domain || ('common.notAvailable' | t) }}</p>
       </article>
       <article class="item">
         <h2>{{ 'vacancies.list.headquarters' | t }}</h2>
-        <p>{{ currentVacancy.headquarters }}</p>
+        <p>{{ currentVacancy.headquarters || ('common.notAvailable' | t) }}</p>
+      </article>
+      <article class="item">
+        <h2>{{ 'vacancies.detail.location' | t }}</h2>
+        <p>{{ currentVacancy.location || ('common.notAvailable' | t) }}</p>
+      </article>
+      <article class="item">
+        <h2>{{ 'vacancies.detail.offerSource' | t }}</h2>
+        <p>{{ currentVacancy.offerSource || ('common.notAvailable' | t) }}</p>
+      </article>
+      <article class="item">
+        <h2>{{ 'vacancies.detail.offerUrl' | t }}</h2>
+        @if (currentVacancy.offerUrl) {
+          <p><a [href]="currentVacancy.offerUrl" target="_blank" rel="noopener">{{ currentVacancy.offerUrl }}</a></p>
+        } @else {
+          <p>{{ 'common.notAvailable' | t }}</p>
+        }
+      </article>
+      <article class="item">
+        <h2>{{ 'vacancies.detail.salaryMin' | t }}</h2>
+        <p>
+          @if (currentVacancy.salaryMin !== null) {
+            {{ currentVacancy.salaryMin | number: '1.0-0' }} {{ currentVacancy.salaryCurrency || '' }}
+          } @else {
+            {{ 'common.notAvailable' | t }}
+          }
+        </p>
       </article>
       <article class="item">
         <h2>{{ 'vacancies.list.applicationDate' | t }}</h2>

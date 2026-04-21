@@ -92,7 +92,7 @@ export class VacanciesListPageComponent {
   ]);
 
   protected readonly currentPage = signal(0);
-  protected readonly pageSizeOptions = [5, 8, 10, 15];
+  protected readonly pageSizeOptions = [10, 20, 50];
   protected readonly locale = this.i18nService.locale;
 
   protected readonly filtersForm = this.formBuilder.nonNullable.group<VacancyFilters>({
@@ -106,7 +106,7 @@ export class VacanciesListPageComponent {
     fromDate: '',
     toDate: '',
     sortBy: 'default',
-    pageSize: 8
+    pageSize: 20
   });
 
   protected readonly vacancies = toSignal(this.vacancyService.watchAppliedListItems(), {
@@ -144,7 +144,7 @@ export class VacanciesListPageComponent {
   protected readonly hasAnyVacancies = computed(() => this.totalVacancies() > 0);
   protected readonly filteredCount = computed(() => this.filteredVacancies().length);
 
-  protected readonly pageSize = computed(() => this.normalizeFilters(this.filters()).pageSize || 8);
+  protected readonly pageSize = computed(() => this.normalizeFilters(this.filters()).pageSize || 20);
   protected readonly totalPages = computed(() => {
     const count = this.filteredCount();
     return Math.max(1, Math.ceil(count / this.pageSize()));
@@ -340,7 +340,7 @@ export class VacanciesListPageComponent {
       fromDate: '',
       toDate: '',
       sortBy: 'default',
-      pageSize: 8
+      pageSize: 20
     });
   }
 
@@ -528,7 +528,7 @@ export class VacanciesListPageComponent {
       fromDate: rawFilters.fromDate ?? '',
       toDate: rawFilters.toDate ?? '',
       sortBy: rawFilters.sortBy ?? 'default',
-      pageSize: rawFilters.pageSize ?? 8
+      pageSize: rawFilters.pageSize ?? 20
     };
   }
 

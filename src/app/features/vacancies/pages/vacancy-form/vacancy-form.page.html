@@ -41,6 +41,11 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline">
+        <mat-label>{{ 'vacancies.detail.location' | t }}</mat-label>
+        <input matInput formControlName="location" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
         <mat-label>{{ 'vacancies.form.headquarters' | t }}</mat-label>
         <input matInput formControlName="headquarters" />
       </mat-form-field>
@@ -58,6 +63,44 @@
         <mat-label>{{ 'vacancies.form.salary' | t }}</mat-label>
         <input matInput formControlName="salary" />
       </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'vacancies.detail.salaryMin' | t }}</mat-label>
+        <input matInput type="number" formControlName="salaryMin" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Salary Max</mat-label>
+        <input matInput type="number" formControlName="salaryMax" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Salary Currency</mat-label>
+        <input matInput formControlName="salaryCurrency" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Employment Type</mat-label>
+        <mat-select formControlName="employmentType">
+          @for (option of employmentTypeOptions; track option) {
+            <mat-option [value]="option">{{ option }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'vacancies.detail.seniority' | t }}</mat-label>
+        <mat-select formControlName="seniority">
+          @for (option of seniorityOptions; track option) {
+            <mat-option [value]="option">{{ option }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="event-full">
+        <mat-label>{{ 'vacancies.list.stack' | t }}</mat-label>
+        <input matInput formControlName="techStack" />
+      </mat-form-field>
     </section>
 
     <section class="block">
@@ -66,6 +109,15 @@
       <mat-form-field appearance="outline">
         <mat-label>{{ 'vacancies.form.offerSource' | t }}</mat-label>
         <input matInput formControlName="offerSource" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Source Type</mat-label>
+        <mat-select formControlName="sourceType">
+          @for (option of sourceTypeOptions; track option) {
+            <mat-option [value]="option">{{ option }}</mat-option>
+          }
+        </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -83,14 +135,29 @@
         <input matInput formControlName="contactName" />
       </mat-form-field>
 
+      <mat-form-field appearance="outline">
+        <mat-label>Contact Email</mat-label>
+        <input matInput formControlName="contactEmail" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Contact LinkedIn</mat-label>
+        <input matInput formControlName="contactLinkedin" />
+      </mat-form-field>
+
       <label>
         {{ 'vacancies.form.contactDate' | t }}
-        <input type="date" formControlName="contactDate" />
+        <input type="datetime-local" formControlName="contactDate" />
+      </label>
+
+      <label>
+        Discovered At
+        <input type="datetime-local" formControlName="discoveredAt" />
       </label>
 
       <label>
         {{ 'vacancies.form.applicationDate' | t }}
-        <input type="date" formControlName="applicationDate" />
+        <input type="datetime-local" formControlName="applicationDate" />
       </label>
     </section>
 
@@ -135,9 +202,34 @@
       </label>
 
       <label>
-        {{ 'vacancies.form.nextFollowUpDate' | t }}
-        <input type="date" formControlName="nextFollowUpDate" />
+        Last Status Change At
+        <input type="datetime-local" formControlName="lastStatusChangeAt" />
       </label>
+
+      <label>
+        {{ 'vacancies.form.nextFollowUpDate' | t }}
+        <input type="datetime-local" formControlName="nextFollowUpDate" />
+      </label>
+
+      <label class="checkbox-field">
+        <input type="checkbox" formControlName="favorite" />
+        Favorite
+      </label>
+
+      <label class="checkbox-field">
+        <input type="checkbox" formControlName="archived" />
+        Archived
+      </label>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Rejection Reason</mat-label>
+        <input matInput formControlName="rejectionReason" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Closure Reason</mat-label>
+        <input matInput formControlName="closureReason" />
+      </mat-form-field>
     </section>
 
     <section class="block block-wide">
