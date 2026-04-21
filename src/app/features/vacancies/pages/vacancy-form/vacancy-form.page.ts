@@ -26,6 +26,7 @@ import {
   statusToTranslationKey
 } from '../../../../shared/utils/label-mappers';
 import { DemoRestrictionDialogComponent } from '../../../../shared/ui/demo-restriction-dialog/demo-restriction-dialog.component';
+import { ConfirmationDialogComponent } from '../../../../shared/ui/confirmation-dialog/confirmation-dialog.component';
 import { VacancyExcelImportService } from '../../services/vacancy-excel-import.service';
 import { VacancyService } from '../../services/vacancy.service';
 
@@ -100,11 +101,11 @@ export class VacancyFormPageComponent {
   protected readonly vacancyForm = this.formBuilder.nonNullable.group({
     company: ['', [Validators.required, Validators.minLength(2)]],
     position: ['', [Validators.required, Validators.minLength(2)]],
-    domain: ['', Validators.required],
-    headquarters: ['', Validators.required],
+    domain: [''],
+    headquarters: [''],
     modality: this.formBuilder.nonNullable.control<WorkModality>('remote', Validators.required),
     salary: [''],
-    offerSource: ['LinkedIn', Validators.required],
+    offerSource: [''],
     offerUrl: [''],
     companyUrl: [''],
     contactName: [''],
@@ -153,18 +154,40 @@ export class VacancyFormPageComponent {
     try {
       const importResult = await this.vacancyExcelImportService.importFromFile(file);
 
-      for (const vacancy of importResult.vacancies) {
-        this.vacancyService.create(vacancy);
+      if (importResult.mode === 'snapshot') {
+        this.vacancyService.importSnapshot({
+          vacancies: importResult.vacancies,
+          events: importResult.events,
+          followUps: importResult.followUps
+        });
+      } else {
+        for (const vacancy of importResult.vacancies) {
+          this.vacancyService.create(vacancy);
+        }
       }
 
-      this.snackBar.open(
-        this.i18nService.translate('vacancies.form.importSuccess', {
-          count: importResult.vacancies.length,
-          skipped: importResult.skippedRows
-        }),
-        this.i18nService.translate('common.close'),
-        { duration: 4500 }
-      );
+      this.dialog.open(ConfirmationDialogComponent, {
+        maxWidth: '520px',
+        data: {
+          variant: 'info',
+          title: this.i18nService.translate('vacancies.importDialog.title'),
+          message: this.i18nService.translate('vacancies.form.importSuccess', {
+            count: importResult.vacancies.length,
+            skipped: importResult.skippedRows
+          }),
+          details: [
+            this.i18nService.translate(
+              importResult.mode === 'snapshot'
+                ? 'vacancies.importDialog.modeSnapshot'
+                : 'vacancies.importDialog.modeVacanciesOnly'
+            ),
+            this.i18nService.translate('vacancies.importDialog.vacancies', { count: importResult.vacancies.length }),
+            this.i18nService.translate('vacancies.importDialog.events', { count: importResult.events.length }),
+            this.i18nService.translate('vacancies.importDialog.followUps', { count: importResult.followUps.length }),
+            this.i18nService.translate('vacancies.importDialog.skipped', { count: importResult.skippedRows })
+          ]
+        }
+      });
 
       if (importResult.vacancies.length > 0) {
         void this.router.navigate(['/app/vacancies']);
@@ -202,29 +225,30 @@ export class VacancyFormPageComponent {
       this.vacancyService.update(this.editingVacancy.id, {
         company: formValue.company,
         position: formValue.position,
-        domain: formValue.domain,
-        headquarters: formValue.headquarters,
+        domain: formValue.domain || null,
+        headquarters: formValue.headquarters || null,
+        location: formValue.headquarters || null,
         modality: formValue.modality,
-        salaryText: formValue.salary,
-        offerSource: formValue.offerSource,
-        offerUrl: formValue.offerUrl,
-        companyUrl: formValue.companyUrl,
-        contactName: formValue.contactName,
+        salaryText: formValue.salary || null,
+        offerSource: formValue.offerSource || null,
+        offerUrl: formValue.offerUrl || null,
+        companyUrl: formValue.companyUrl || null,
+        contactName: formValue.contactName || null,
         lastContactAt: formValue.contactDate || null,
         applicationDate: formValue.applicationDate || null,
         applicationStatus: formValue.status,
-        processStage: formValue.processStage,
+        processStage: formValue.processStage || null,
         priority: formValue.priority,
         companyResponse: formValue.responseState,
         followUpPending: formValue.followUpPending,
         nextFollowUpDate: formValue.nextFollowUpDate || null,
-        notes: formValue.notes,
-        hrObservations: formValue.hrObservations,
+        notes: formValue.notes || null,
+        hrObservations: formValue.hrObservations || null,
         tags,
         updatedAt: now,
         lastStatusChangeAt: now,
         closedAt: formValue.status === 'rejected' || formValue.status === 'hired' ? now : null,
-        closureReason: formValue.status === 'rejected' ? 'rejected' : '',
+        closureReason: formValue.status === 'rejected' ? 'rejected' : null,
         archivedAt: null
       });
 
@@ -241,27 +265,27 @@ export class VacancyFormPageComponent {
       closedAt: null,
       company: formValue.company,
       position: formValue.position,
-      domain: formValue.domain,
-      location: formValue.headquarters,
-      headquarters: formValue.headquarters,
+      domain: formValue.domain || null,
+      location: formValue.headquarters || null,
+      headquarters: formValue.headquarters || null,
       modality: formValue.modality,
       employmentType: 'full_time',
       seniority: 'unknown',
       techStack: tags,
-      salaryText: formValue.salary,
+      salaryText: formValue.salary || null,
       salaryMin: null,
       salaryMax: null,
       salaryCurrency: null,
-      offerSource: formValue.offerSource,
+      offerSource: formValue.offerSource || null,
       sourceType: 'job_board',
-      offerUrl: formValue.offerUrl,
-      companyUrl: formValue.companyUrl,
-      contactName: formValue.contactName,
-      contactEmail: '',
-      contactLinkedin: '',
+      offerUrl: formValue.offerUrl || null,
+      companyUrl: formValue.companyUrl || null,
+      contactName: formValue.contactName || null,
+      contactEmail: null,
+      contactLinkedin: null,
       lastContactAt: formValue.contactDate || null,
       applicationStatus: formValue.status,
-      processStage: formValue.processStage,
+      processStage: formValue.processStage || null,
       priority: formValue.priority,
       companyResponse: formValue.responseState,
       discoveredAt: now,
@@ -271,10 +295,10 @@ export class VacancyFormPageComponent {
       followUpPending: formValue.followUpPending,
       favorite: false,
       archived: false,
-      rejectionReason: '',
-      closureReason: '',
-      notes: formValue.notes,
-      hrObservations: formValue.hrObservations,
+      rejectionReason: null,
+      closureReason: null,
+      notes: formValue.notes || null,
+      hrObservations: formValue.hrObservations || null,
       tags
     };
 
@@ -302,24 +326,24 @@ export class VacancyFormPageComponent {
     this.vacancyForm.patchValue({
       company: vacancy.company,
       position: vacancy.position,
-      domain: vacancy.domain,
-      headquarters: vacancy.headquarters,
+      domain: vacancy.domain ?? '',
+      headquarters: vacancy.headquarters ?? '',
       modality: vacancy.modality,
-      salary: vacancy.salaryText,
-      offerSource: vacancy.offerSource,
-      offerUrl: vacancy.offerUrl,
-      companyUrl: vacancy.companyUrl,
-      contactName: vacancy.contactName,
+      salary: vacancy.salaryText ?? '',
+      offerSource: vacancy.offerSource ?? '',
+      offerUrl: vacancy.offerUrl ?? '',
+      companyUrl: vacancy.companyUrl ?? '',
+      contactName: vacancy.contactName ?? '',
       contactDate: vacancy.lastContactAt ?? '',
       applicationDate: vacancy.applicationDate ?? '',
       status: vacancy.applicationStatus,
-      processStage: vacancy.processStage,
+      processStage: vacancy.processStage ?? '',
       priority: vacancy.priority,
       responseState: vacancy.companyResponse,
       followUpPending: vacancy.followUpPending,
       nextFollowUpDate: vacancy.nextFollowUpDate ?? '',
-      notes: vacancy.notes,
-      hrObservations: vacancy.hrObservations,
+      notes: vacancy.notes ?? '',
+      hrObservations: vacancy.hrObservations ?? '',
       tags: vacancy.tags.join(', ')
     });
   }

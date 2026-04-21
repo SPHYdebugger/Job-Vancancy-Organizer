@@ -15,7 +15,9 @@ export class VacancyMapperService {
     const shouldMarkAsFake = options.markAsFake ?? false;
     const now = new Date().toISOString();
     const companyName = shouldMarkAsFake ? `FAKE ${row.company}` : row.company;
-    const roleName = shouldMarkAsFake ? '[FAKE] Backend Developer' : 'Backend Developer';
+    const importedPosition = row.position.trim();
+    const defaultPosition = importedPosition || 'Backend Developer';
+    const roleName = shouldMarkAsFake ? `[FAKE] ${defaultPosition}` : defaultPosition;
     const applicationDate = row.date || null;
 
     return {
@@ -27,9 +29,9 @@ export class VacancyMapperService {
       closedAt: null,
       company: companyName,
       position: roleName,
-      domain: row.domain,
-      location: row.headquarters || 'Unknown',
-      headquarters: row.headquarters,
+      domain: row.domain || null,
+      location: row.headquarters || null,
+      headquarters: row.headquarters || null,
       modality: 'remote',
       employmentType: 'full_time',
       seniority: 'unknown',
@@ -40,11 +42,11 @@ export class VacancyMapperService {
       salaryCurrency: null,
       offerSource: 'Imported from Excel',
       sourceType: 'other',
-      offerUrl: '',
-      companyUrl: '',
-      contactName: row.contact,
-      contactEmail: '',
-      contactLinkedin: '',
+      offerUrl: null,
+      companyUrl: null,
+      contactName: row.contact || null,
+      contactEmail: null,
+      contactLinkedin: null,
       lastContactAt: row.contactDate || null,
       applicationStatus: 'pending',
       processStage: 'Imported',
@@ -57,10 +59,10 @@ export class VacancyMapperService {
       followUpPending: false,
       favorite: false,
       archived: false,
-      rejectionReason: '',
-      closureReason: '',
-      notes: 'Imported from spreadsheet row mapping.',
-      hrObservations: '',
+      rejectionReason: null,
+      closureReason: null,
+      notes: row.message || 'Imported from spreadsheet row mapping.',
+      hrObservations: null,
       tags: ['seed', 'excel-import']
     };
   }

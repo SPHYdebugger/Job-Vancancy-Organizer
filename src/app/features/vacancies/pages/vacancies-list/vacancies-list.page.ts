@@ -219,15 +219,23 @@ export class VacanciesListPageComponent {
         followUps: filteredFollowUps
       });
 
-      this.snackBar.open(
-        this.i18nService.translate('vacancies.list.exportSuccess', {
-          vacancies: fullVacancies.length,
-          events: filteredEvents.length,
-          followUps: filteredFollowUps.length
-        }),
-        this.i18nService.translate('common.close'),
-        { duration: 3800 }
-      );
+      this.dialog.open(ConfirmationDialogComponent, {
+        maxWidth: '520px',
+        data: {
+          variant: 'info',
+          title: this.i18nService.translate('vacancies.exportDialog.title'),
+          message: this.i18nService.translate('vacancies.list.exportSuccess', {
+            vacancies: fullVacancies.length,
+            events: filteredEvents.length,
+            followUps: filteredFollowUps.length
+          }),
+          details: [
+            this.i18nService.translate('vacancies.exportDialog.vacancies', { count: fullVacancies.length }),
+            this.i18nService.translate('vacancies.exportDialog.events', { count: filteredEvents.length }),
+            this.i18nService.translate('vacancies.exportDialog.followUps', { count: filteredFollowUps.length })
+          ]
+        }
+      });
     } catch {
       this.snackBar.open(
         this.i18nService.translate('vacancies.list.exportFailed'),

@@ -308,6 +308,34 @@ export class LocalVacancyRepository implements VacancyRepository {
     this.commit(updatedVacancies);
   }
 
+  public importSnapshot(snapshot: {
+    vacancies: Vacancy[];
+    events: VacancyEvent[];
+    followUps: VacancyFollowUp[];
+  }): void {
+    if (!this.currentUserId) {
+      return;
+    }
+
+    const normalizedVacancies = snapshot.vacancies.map((vacancy) =>
+      normalizeVacancy(vacancy as Partial<Vacancy> & Record<string, unknown>)
+    );
+    const vacancyIds = new Set(normalizedVacancies.map((vacancy) => vacancy.id));
+    const normalizedEvents = snapshot.events
+      .filter((event) => vacancyIds.has(event.vacancyId))
+      .map((event) => ({
+        ...event,
+        deletedAt: event.deletedAt ?? (event as VacancyEvent & { deleted_at?: string | null }).deleted_at ?? null,
+        createdAt: event.createdAt || event.eventAt || new Date().toISOString(),
+        eventAt: event.eventAt || event.createdAt || new Date().toISOString()
+      }));
+    const normalizedFollowUps = snapshot.followUps.filter((followUp) => vacancyIds.has(followUp.vacancyId));
+
+    this.commitEvents(normalizedEvents, true);
+    this.commitFollowUps(normalizedFollowUps, true);
+    this.commit(normalizedVacancies);
+  }
+
   public replaceAll(vacancies: Vacancy[]): void {
     if (!this.currentUserId) {
       return;

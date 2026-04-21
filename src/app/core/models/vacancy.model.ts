@@ -51,35 +51,35 @@ export interface Vacancy {
   // Job data
   company: string;
   position: string;
-  domain: string;
-  location: string;
-  headquarters: string;
+  domain: string | null;
+  location: string | null;
+  headquarters: string | null;
   modality: VacancyModality;
   employmentType: EmploymentType;
   seniority: SeniorityLevel;
 
   // Offer
   techStack: string[];
-  salaryText: string;
+  salaryText: string | null;
   salaryMin: number | null;
   salaryMax: number | null;
   salaryCurrency: string | null;
 
   // Source
-  offerSource: string;
+  offerSource: string | null;
   sourceType: 'job_board' | 'recruiter' | 'referral' | 'company_site' | 'networking' | 'other';
-  offerUrl: string;
-  companyUrl: string;
+  offerUrl: string | null;
+  companyUrl: string | null;
 
   // Contact
-  contactName: string;
-  contactEmail: string;
-  contactLinkedin: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactLinkedin: string | null;
   lastContactAt: string | null;
 
   // Current state
   applicationStatus: VacancyStatus;
-  processStage: string;
+  processStage: string | null;
   companyResponse: CompanyResponseStatus;
   priority: PriorityLevel;
 
@@ -95,11 +95,11 @@ export interface Vacancy {
   archived: boolean;
 
   // Closure
-  rejectionReason: string;
-  closureReason: string;
+  rejectionReason: string | null;
+  closureReason: string | null;
 
   // Notes
-  notes: string;
-  hrObservations: string;
+  notes: string | null;
+  hrObservations: string | null;
   tags: string[];
 }

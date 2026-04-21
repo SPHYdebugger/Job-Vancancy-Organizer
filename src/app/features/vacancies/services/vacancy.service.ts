@@ -142,6 +142,14 @@ export class VacancyService {
     this.vacancyRepository.remove(id);
   }
 
+  public importSnapshot(snapshot: {
+    vacancies: Vacancy[];
+    events: VacancyEvent[];
+    followUps: VacancyFollowUp[];
+  }): void {
+    this.vacancyRepository.importSnapshot(snapshot);
+  }
+
   public recordProcessEvent(vacancyId: string, input: RecordVacancyEventInput): { calendarUrl: string | null } {
     const vacancy = this.vacancyRepository.getById(vacancyId);
     if (!vacancy) {
@@ -327,10 +335,10 @@ export class VacancyService {
       id: vacancy.id,
       company: vacancy.company,
       position: vacancy.position,
-      domain: vacancy.domain,
-      headquarters: vacancy.headquarters,
-      contactName: vacancy.contactName,
-      notes: vacancy.notes,
+      domain: vacancy.domain ?? '',
+      headquarters: vacancy.headquarters ?? '',
+      contactName: vacancy.contactName ?? '',
+      notes: vacancy.notes ?? '',
       tags: vacancy.tags,
       techStack: vacancy.techStack,
       applicationStatus: vacancy.applicationStatus,

@@ -30,6 +30,11 @@ export interface VacancyRepository {
   updateEvent(id: string, changes: Partial<VacancyEvent>): void;
   removeEvent(id: string): void;
   remove(id: string): void;
+  importSnapshot(snapshot: {
+    vacancies: Vacancy[];
+    events: VacancyEvent[];
+    followUps: VacancyFollowUp[];
+  }): void;
   replaceAll(vacancies: Vacancy[]): void;
   count(): number;
 }

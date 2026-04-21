@@ -9,6 +9,92 @@ import { Vacancy } from '../../../core/models/vacancy.model';
   providedIn: 'root'
 })
 export class VacancyExcelExportService {
+  private readonly vacancyColumns: ReadonlyArray<keyof Vacancy> = [
+    'id',
+    'deletedAt',
+    'createdAt',
+    'updatedAt',
+    'archivedAt',
+    'closedAt',
+    'company',
+    'position',
+    'domain',
+    'location',
+    'headquarters',
+    'modality',
+    'employmentType',
+    'seniority',
+    'techStack',
+    'salaryText',
+    'salaryMin',
+    'salaryMax',
+    'salaryCurrency',
+    'offerSource',
+    'sourceType',
+    'offerUrl',
+    'companyUrl',
+    'contactName',
+    'contactEmail',
+    'contactLinkedin',
+    'lastContactAt',
+    'applicationStatus',
+    'processStage',
+    'companyResponse',
+    'priority',
+    'discoveredAt',
+    'applicationDate',
+    'lastStatusChangeAt',
+    'nextFollowUpDate',
+    'followUpPending',
+    'favorite',
+    'archived',
+    'rejectionReason',
+    'closureReason',
+    'notes',
+    'hrObservations',
+    'tags'
+  ];
+
+  private readonly eventColumns: ReadonlyArray<string> = [
+    'id',
+    'deletedAt',
+    'vacancyId',
+    'type',
+    'title',
+    'description',
+    'previousStatus',
+    'newStatus',
+    'eventAt',
+    'createdAt',
+    'actorType',
+    'actorId',
+    'metadata.contactName',
+    'metadata.companyResponse',
+    'metadata.interviewType',
+    'metadata.interviewResult',
+    'metadata.followUpDate',
+    'metadata.offerUrl',
+    'metadata.messageSnapshot',
+    'metadata.rejectionReason',
+    'metadata.attachments',
+    'metadata.customFields'
+  ];
+
+  private readonly followUpColumns: ReadonlyArray<keyof VacancyFollowUp> = [
+    'id',
+    'vacancyId',
+    'plannedDate',
+    'completedAt',
+    'status',
+    'channel',
+    'subject',
+    'message',
+    'responseReceived',
+    'responseSummary',
+    'createdAt',
+    'updatedAt'
+  ];
+
   public exportSnapshot(input: {
     vacancies: Vacancy[];
     events: VacancyEvent[];
@@ -17,9 +103,9 @@ export class VacancyExcelExportService {
   }): void {
     const workbook = XLSX.utils.book_new();
 
-    const vacanciesRows = this.toTabularRows(input.vacancies);
-    const eventsRows = this.toTabularRows(input.events);
-    const followUpsRows = this.toTabularRows(input.followUps);
+    const vacanciesRows = this.toVacancyRows(input.vacancies);
+    const eventsRows = this.toEventRows(input.events);
+    const followUpsRows = this.toFollowUpRows(input.followUps);
 
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(vacanciesRows), 'Vacancies');
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(eventsRows), 'Events');
@@ -30,58 +116,65 @@ export class VacancyExcelExportService {
     XLSX.writeFile(workbook, input.fileName || fallbackName);
   }
 
-  private toTabularRows<T extends object>(items: T[]): Array<Record<string, string | number | boolean | null>> {
-    if (items.length === 0) {
-      return [];
-    }
-
-    const flattenedRows = items.map((item) => this.flattenRecord(item));
-    const allKeys = [...new Set(flattenedRows.flatMap((row) => Object.keys(row)))].sort((left, right) =>
-      left.localeCompare(right)
-    );
-
-    return flattenedRows.map((row) => {
-      const normalizedRow: Record<string, string | number | boolean | null> = {};
-      for (const key of allKeys) {
-        normalizedRow[key] = row[key] ?? null;
+  private toVacancyRows(vacancies: Vacancy[]): Array<Record<string, string | number | boolean | null>> {
+    return vacancies.map((vacancy) => {
+      const row: Record<string, string | number | boolean | null> = {};
+      for (const column of this.vacancyColumns) {
+        row[column] = this.serializeScalar(vacancy[column]);
       }
-      return normalizedRow;
+      return row;
     });
   }
 
-  private flattenRecord(
-    input: object,
-    prefix = ''
-  ): Record<string, string | number | boolean | null> {
-    const output: Record<string, string | number | boolean | null> = {};
-
-    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-      const fullKey = prefix ? `${prefix}.${key}` : key;
-      if (value === null || value === undefined) {
-        output[fullKey] = null;
-        continue;
+  private toEventRows(events: VacancyEvent[]): Array<Record<string, string | number | boolean | null>> {
+    return events.map((event) => {
+      const row: Record<string, string | number | boolean | null> = {};
+      for (const column of this.eventColumns) {
+        row[column] = this.getEventColumnValue(event, column);
       }
+      return row;
+    });
+  }
 
-      if (Array.isArray(value)) {
-        output[fullKey] = JSON.stringify(value);
-        continue;
+  private toFollowUpRows(followUps: VacancyFollowUp[]): Array<Record<string, string | number | boolean | null>> {
+    return followUps.map((followUp) => {
+      const row: Record<string, string | number | boolean | null> = {};
+      for (const column of this.followUpColumns) {
+        row[column] = this.serializeScalar(followUp[column]);
       }
+      return row;
+    });
+  }
 
-      const valueType = typeof value;
-      if (valueType === 'string' || valueType === 'number' || valueType === 'boolean') {
-        output[fullKey] = value as string | number | boolean;
-        continue;
-      }
-
-      if (valueType === 'object') {
-        Object.assign(output, this.flattenRecord(value as Record<string, unknown>, fullKey));
-        continue;
-      }
-
-      output[fullKey] = `${value}`;
+  private getEventColumnValue(event: VacancyEvent, column: string): string | number | boolean | null {
+    if (column.startsWith('metadata.')) {
+      const metadataKey = column.replace('metadata.', '') as keyof VacancyEvent['metadata'];
+      const metadataValue = event.metadata?.[metadataKey];
+      return this.serializeScalar(metadataValue as unknown);
     }
 
-    return output;
+    const value = (event as unknown as Record<string, unknown>)[column];
+    return this.serializeScalar(value);
+  }
+
+  private serializeScalar(value: unknown): string | number | boolean | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    if (Array.isArray(value)) {
+      return JSON.stringify(value);
+    }
+
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return value;
+    }
+
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    return `${value}`;
   }
 
   private pad(value: number): string {
