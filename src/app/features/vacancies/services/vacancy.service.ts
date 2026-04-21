@@ -142,6 +142,10 @@ export class VacancyService {
     this.vacancyRepository.remove(id);
   }
 
+  public softDeleteAllForCurrentUser(): void {
+    this.vacancyRepository.softDeleteAllForCurrentUser();
+  }
+
   public importSnapshot(snapshot: {
     vacancies: Vacancy[];
     events: VacancyEvent[];
@@ -230,6 +234,7 @@ export class VacancyService {
     if (followUpDateIso) {
       this.vacancyRepository.createFollowUp({
         id: `fol_${crypto.randomUUID()}`,
+        deletedAt: null,
         vacancyId,
         plannedDate: followUpDateIso,
         completedAt: null,

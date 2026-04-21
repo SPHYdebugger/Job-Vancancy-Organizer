@@ -82,6 +82,7 @@ export class VacancyExcelExportService {
 
   private readonly followUpColumns: ReadonlyArray<keyof VacancyFollowUp> = [
     'id',
+    'deletedAt',
     'vacancyId',
     'plannedDate',
     'completedAt',

@@ -82,6 +82,7 @@ export function createFollowUpFromVacancy(vacancy: Vacancy): VacancyFollowUp | n
 
   return {
     id: `fol_${crypto.randomUUID()}`,
+    deletedAt: null,
     vacancyId: vacancy.id,
     plannedDate: vacancy.nextFollowUpDate,
     completedAt: null,

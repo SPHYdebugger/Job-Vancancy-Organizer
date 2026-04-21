@@ -30,6 +30,7 @@ export interface VacancyRepository {
   updateEvent(id: string, changes: Partial<VacancyEvent>): void;
   removeEvent(id: string): void;
   remove(id: string): void;
+  softDeleteAllForCurrentUser(): void;
   importSnapshot(snapshot: {
     vacancies: Vacancy[];
     events: VacancyEvent[];

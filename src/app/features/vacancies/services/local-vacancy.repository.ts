@@ -132,6 +132,7 @@ export class LocalVacancyRepository implements VacancyRepository {
     const normalizedFollowUp: VacancyFollowUp = {
       ...followUp,
       id: followUp.id || `fol_${crypto.randomUUID()}`,
+      deletedAt: followUp.deletedAt ?? null,
       updatedAt: now,
       createdAt: followUp.createdAt || now
     };
@@ -172,7 +173,18 @@ export class LocalVacancyRepository implements VacancyRepository {
     }
 
     const target = this.followUpsSubject.value.find((followUp) => followUp.id === id);
-    const updatedFollowUps = this.followUpsSubject.value.filter((followUp) => followUp.id !== id);
+    const deletedAt = new Date().toISOString();
+    const updatedFollowUps = this.followUpsSubject.value.map((followUp) => {
+      if (followUp.id !== id || followUp.deletedAt) {
+        return followUp;
+      }
+
+      return {
+        ...followUp,
+        deletedAt,
+        updatedAt: deletedAt
+      };
+    });
     this.commitFollowUps(updatedFollowUps, true);
 
     if (target) {
@@ -308,6 +320,44 @@ export class LocalVacancyRepository implements VacancyRepository {
     this.commit(updatedVacancies);
   }
 
+  public softDeleteAllForCurrentUser(): void {
+    if (!this.currentUserId) {
+      return;
+    }
+
+    const deletedAt = new Date().toISOString();
+    const updatedVacancies = this.vacanciesSubject.value.map((vacancy) =>
+      vacancy.deletedAt
+        ? vacancy
+        : {
+            ...vacancy,
+            deletedAt,
+            updatedAt: deletedAt
+          }
+    );
+    const updatedEvents = this.eventsSubject.value.map((event) =>
+      event.deletedAt
+        ? event
+        : {
+            ...event,
+            deletedAt
+          }
+    );
+    const updatedFollowUps = this.followUpsSubject.value.map((followUp) =>
+      followUp.deletedAt
+        ? followUp
+        : {
+            ...followUp,
+            deletedAt,
+            updatedAt: deletedAt
+          }
+    );
+
+    this.commitEvents(updatedEvents, true);
+    this.commitFollowUps(updatedFollowUps, true);
+    this.commit(updatedVacancies);
+  }
+
   public importSnapshot(snapshot: {
     vacancies: Vacancy[];
     events: VacancyEvent[];
@@ -330,9 +380,13 @@ export class LocalVacancyRepository implements VacancyRepository {
         eventAt: event.eventAt || event.createdAt || new Date().toISOString()
       }));
     const normalizedFollowUps = snapshot.followUps.filter((followUp) => vacancyIds.has(followUp.vacancyId));
+    const followUpsWithDeleteState = normalizedFollowUps.map((followUp) => ({
+      ...followUp,
+      deletedAt: followUp.deletedAt ?? (followUp as VacancyFollowUp & { deleted_at?: string | null }).deleted_at ?? null
+    }));
 
     this.commitEvents(normalizedEvents, true);
-    this.commitFollowUps(normalizedFollowUps, true);
+    this.commitFollowUps(followUpsWithDeleteState, true);
     this.commit(normalizedVacancies);
   }
 
@@ -421,7 +475,10 @@ export class LocalVacancyRepository implements VacancyRepository {
     }
 
     const followUpsByUser = this.readFollowUpsByUserRaw();
-    return followUpsByUser[this.currentUserId] ?? [];
+    return (followUpsByUser[this.currentUserId] ?? []).map((followUp) => ({
+      ...followUp,
+      deletedAt: followUp.deletedAt ?? (followUp as VacancyFollowUp & { deleted_at?: string | null }).deleted_at ?? null
+    }));
   }
 
   private readVacanciesByUserRaw(): Record<string, Vacancy[]> {
@@ -464,7 +521,7 @@ export class LocalVacancyRepository implements VacancyRepository {
 
   private syncFollowUpFromVacancies(vacancies: Vacancy[], vacancyId: string): void {
     const unrelatedFollowUps = this.followUpsSubject.value.filter((item) => item.vacancyId !== vacancyId);
-    const existingFollowUps = this.followUpsSubject.value.filter((item) => item.vacancyId === vacancyId);
+    const existingFollowUps = this.followUpsSubject.value.filter((item) => item.vacancyId === vacancyId && item.deletedAt == null);
     const targetVacancy = vacancies.find((vacancy) => vacancy.id === vacancyId);
 
     if (!targetVacancy || targetVacancy.deletedAt) {
@@ -493,7 +550,7 @@ export class LocalVacancyRepository implements VacancyRepository {
     }
 
     const relatedFollowUps = this.followUpsSubject.value
-      .filter((followUp) => followUp.vacancyId === vacancyId)
+      .filter((followUp) => followUp.vacancyId === vacancyId && followUp.deletedAt == null)
       .sort((left, right) => new Date(left.plannedDate).getTime() - new Date(right.plannedDate).getTime());
 
     const pendingFollowUp = relatedFollowUps.find((followUp) => followUp.status === 'pending');
@@ -525,7 +582,7 @@ export class LocalVacancyRepository implements VacancyRepository {
 
   private getFollowUpsForActiveVacancies(followUps: VacancyFollowUp[], vacancies: Vacancy[]): VacancyFollowUp[] {
     const activeVacancyIds = new Set(this.getActiveVacancies(vacancies).map((vacancy) => vacancy.id));
-    return followUps.filter((followUp) => activeVacancyIds.has(followUp.vacancyId));
+    return followUps.filter((followUp) => followUp.deletedAt == null && activeVacancyIds.has(followUp.vacancyId));
   }
 
   private rebuildReadModels(): void {
@@ -563,10 +620,10 @@ export class LocalVacancyRepository implements VacancyRepository {
   private buildDashboardPreAggregates(vacancies: Vacancy[]): DashboardPreAggregates {
     const base = createEmptyDashboardPreAggregates();
     const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const monthlyBuckets = this.initializeMonthlyBuckets(now);
+    const currentWeekStart = this.startOfWeek(now);
+    const nextWeekStart = this.addDays(currentWeekStart, 7);
+    const previousWeekStart = this.addDays(currentWeekStart, -7);
+    const weeklyBuckets = this.initializeWeeklyBuckets(now);
     const appliedStatuses = new Set<Vacancy['applicationStatus']>([
       'applied',
       'in_review',
@@ -610,27 +667,27 @@ export class LocalVacancyRepository implements VacancyRepository {
         base.pendingFollowUpsCount += 1;
       }
 
-      if (this.isInMonthRange(vacancy.createdAt || vacancy.discoveredAt, currentMonthStart, nextMonthStart)) {
+      if (this.isInRange(vacancy.createdAt || vacancy.discoveredAt, currentWeekStart, nextWeekStart)) {
         base.thisMonthCreated += 1;
       }
 
       if (
         this.isCvSentStatus(vacancy.applicationStatus) &&
-        this.isInMonthRange(vacancy.applicationDate || vacancy.updatedAt, currentMonthStart, nextMonthStart)
+        this.isInRange(vacancy.applicationDate || vacancy.updatedAt, currentWeekStart, nextWeekStart)
       ) {
         base.cvSentThisMonth += 1;
       }
 
       if (
         this.isCvSentStatus(vacancy.applicationStatus) &&
-        this.isInMonthRange(vacancy.applicationDate || vacancy.updatedAt, previousMonthStart, currentMonthStart)
+        this.isInRange(vacancy.applicationDate || vacancy.updatedAt, previousWeekStart, currentWeekStart)
       ) {
         base.cvSentPreviousMonth += 1;
       }
 
       if (
         vacancy.applicationStatus === 'rejected' &&
-        this.isInMonthRange(vacancy.lastStatusChangeAt || vacancy.updatedAt, currentMonthStart, nextMonthStart)
+        this.isInRange(vacancy.lastStatusChangeAt || vacancy.updatedAt, currentWeekStart, nextWeekStart)
       ) {
         base.rejectedThisMonth += 1;
       }
@@ -657,29 +714,31 @@ export class LocalVacancyRepository implements VacancyRepository {
       const sourceDate = vacancy.applicationDate ?? vacancy.createdAt;
       const parsedDate = new Date(sourceDate);
       if (!Number.isNaN(parsedDate.getTime())) {
-        const key = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`;
-        const targetBucket = monthlyBuckets.get(key);
+        const bucketDate = this.startOfWeek(parsedDate);
+        const key = this.toIsoDate(bucketDate);
+        const targetBucket = weeklyBuckets.get(key);
         if (targetBucket) {
           targetBucket.total += 1;
         }
       }
     }
 
-    base.monthlyApplications = [...monthlyBuckets.values()];
+    base.monthlyApplications = [...weeklyBuckets.values()];
     return base;
   }
 
-  private initializeMonthlyBuckets(now: Date): Map<string, DashboardPreAggregates['monthlyApplications'][number]> {
+  private initializeWeeklyBuckets(now: Date): Map<string, DashboardPreAggregates['monthlyApplications'][number]> {
     const buckets = new Map<string, DashboardPreAggregates['monthlyApplications'][number]>();
+    const currentWeekStart = this.startOfWeek(now);
 
     for (let index = 11; index >= 0; index -= 1) {
-      const pointDate = new Date(now.getFullYear(), now.getMonth() - index, 1);
-      const year = pointDate.getFullYear();
-      const monthNumber = pointDate.getMonth() + 1;
-      const key = `${year}-${String(monthNumber).padStart(2, '0')}`;
+      const pointDate = this.addDays(currentWeekStart, -index * 7);
+      const key = this.toIsoDate(pointDate);
+      const weekYear = pointDate.getFullYear();
+      const weekNumber = this.getWeekNumber(pointDate);
       buckets.set(key, {
-        month: new Intl.DateTimeFormat('en-US', { month: 'short' }).format(pointDate),
-        year,
+        month: `W${weekNumber}`,
+        year: weekYear,
         total: 0
       });
     }
@@ -687,7 +746,7 @@ export class LocalVacancyRepository implements VacancyRepository {
     return buckets;
   }
 
-  private isInMonthRange(dateValue: string | null | undefined, rangeStart: Date, rangeEnd: Date): boolean {
+  private isInRange(dateValue: string | null | undefined, rangeStart: Date, rangeEnd: Date): boolean {
     if (!dateValue) {
       return false;
     }
@@ -698,6 +757,33 @@ export class LocalVacancyRepository implements VacancyRepository {
     }
 
     return parsedDate >= rangeStart && parsedDate < rangeEnd;
+  }
+
+  private startOfWeek(date: Date): Date {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    const day = normalizedDate.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    normalizedDate.setDate(normalizedDate.getDate() + diff);
+    return normalizedDate;
+  }
+
+  private addDays(baseDate: Date, days: number): Date {
+    const targetDate = new Date(baseDate);
+    targetDate.setDate(targetDate.getDate() + days);
+    return targetDate;
+  }
+
+  private toIsoDate(date: Date): string {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  private getWeekNumber(date: Date): number {
+    const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = target.getUTCDay() || 7;
+    target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+    return Math.ceil(((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
   private isCvSentStatus(status: Vacancy['applicationStatus']): boolean {

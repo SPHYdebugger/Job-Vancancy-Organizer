@@ -24,6 +24,7 @@ export interface KpiMetric {
 
 export interface MonthlyApplicationsPoint {
   month: string;
+  year?: number;
   total: number;
 }
 

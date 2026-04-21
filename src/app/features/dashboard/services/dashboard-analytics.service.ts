@@ -142,6 +142,7 @@ export class DashboardAnalyticsService {
   private buildMonthlyApplications(aggregate: DashboardPreAggregates): DashboardAnalytics['monthlyApplications'] {
     return aggregate.monthlyApplications.map((point) => ({
       month: point.month,
+      year: point.year,
       total: point.total
     }));
   }
@@ -242,7 +243,7 @@ export class DashboardAnalyticsService {
       archived: 'No Response'
     };
 
-    return map[status];
+    return map[status] ?? 'Pending';
   }
 
   private toDashboardPriority(priority: DashboardVacancyDto['priority']): DashboardPriority {

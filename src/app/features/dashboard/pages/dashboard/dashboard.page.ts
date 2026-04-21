@@ -215,8 +215,9 @@ export class DashboardPageComponent {
     return `priority-${priority.toLowerCase()}`;
   }
 
-  protected statusClass(status: string): string {
-    return `status-${status.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  protected statusClass(status: string | null | undefined): string {
+    const normalized = (status ?? 'pending').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return `status-${normalized}`;
   }
 
   protected metricLabel(metricId: string): string {
@@ -245,9 +246,9 @@ export class DashboardPageComponent {
 
     switch (metricId) {
       case 'total-vacancies':
-        return this.i18nService.translate('dashboard.kpi.trend.thisMonth', { value: signedTrend });
+        return this.i18nService.translate('dashboard.kpi.trend.thisWeekDelta', { value: signedTrend });
       case 'cv-sent':
-        return this.i18nService.translate('dashboard.kpi.trend.vsLastMonth', { value: signedTrend });
+        return this.i18nService.translate('dashboard.kpi.trend.vsLastWeek', { value: signedTrend });
       case 'applied':
         return this.i18nService.translate('dashboard.kpi.trend.active', { value: trendValue });
       case 'interviews':
@@ -255,13 +256,13 @@ export class DashboardPageComponent {
       case 'technical-tests':
         return this.i18nService.translate('dashboard.kpi.trend.pendingReview', { value: trendValue });
       case 'rejected':
-        return this.i18nService.translate('dashboard.kpi.trend.thisMonth', { value: negativeTrend });
+        return this.i18nService.translate('dashboard.kpi.trend.thisWeekDelta', { value: negativeTrend });
       case 'no-response':
         return this.i18nService.translate('dashboard.kpi.trend.afterFollowUps', { value: negativeTrend });
       case 'followups':
         return this.i18nService.translate('dashboard.kpi.trend.thisWeek', { value: trendValue });
       default:
-        return this.i18nService.translate('dashboard.kpi.trend.vsLastMonth', { value: signedTrend });
+        return this.i18nService.translate('dashboard.kpi.trend.vsLastWeek', { value: signedTrend });
     }
   }
 
@@ -343,9 +344,7 @@ export class DashboardPageComponent {
         padding: { left: 6, right: 10 }
       },
       xaxis: {
-        categories: this.analytics().monthlyApplications.map((item, index, items) =>
-          this.translateMonthWithYear(item.month, index, items.length)
-        ),
+        categories: this.analytics().monthlyApplications.map((item) => this.formatWeeklyCategory(item.month, item.year)),
         labels: {
           style: { colors: '#475569', fontFamily: 'Manrope' }
         },
@@ -531,14 +530,13 @@ export class DashboardPageComponent {
     return this.i18nService.translate(monthMap[normalized] ?? 'dashboard.month.jan');
   }
 
-  private translateMonthWithYear(month: string, index: number, totalItems: number): string {
-    const translatedMonth = this.translateMonth(month);
-    const currentDate = new Date();
-    const monthOffset = index - (totalItems - 1);
-    const pointDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + monthOffset, 1);
-    const shortYear = `${pointDate.getFullYear()}`.slice(-2);
+  private formatWeeklyCategory(label: string, year?: number): string {
+    if (label.startsWith('W')) {
+      const shortYear = year ? `${year}`.slice(-2) : '';
+      return shortYear ? `${label}-${shortYear}` : label;
+    }
 
-    return `${translatedMonth}${shortYear}`;
+    return label;
   }
 
   private translateModalityLabel(label: string): string {

@@ -13,10 +13,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 
+import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { Vacancy } from '../../../../core/models/vacancy.model';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ConfirmationDialogComponent } from '../../../../shared/ui/confirmation-dialog/confirmation-dialog.component';
+import { PasswordConfirmDialogComponent } from '../../../../shared/ui/password-confirm-dialog/password-confirm-dialog.component';
 import { modalityToTranslationKey, priorityToTranslationKey, statusToTranslationKey } from '../../../../shared/utils/label-mappers';
 import { VacancyListItemDto } from '../../models/vacancy-list-item.dto';
 import { VacancyExcelExportService } from '../../services/vacancy-excel-export.service';
@@ -81,6 +83,7 @@ export class VacanciesListPageComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly i18nService = inject(I18nService);
+  private readonly authService = inject(AuthService);
 
   private readonly priorityRanking = new Map([
     ['high', 3],
@@ -194,6 +197,66 @@ export class VacanciesListPageComponent {
     });
   }
 
+  protected async softDeleteAllVacancies(): Promise<void> {
+    const activeVacanciesCount = this.vacancyService.getAll().length;
+    const activeEventsCount = this.vacancyService.getEvents().length;
+    const activeFollowUpsCount = this.vacancyService.getFollowUps().length;
+
+    if (activeVacanciesCount === 0 && activeEventsCount === 0 && activeFollowUpsCount === 0) {
+      this.snackBar.open(this.i18nService.translate('vacancies.list.noDataTitle'), this.i18nService.translate('common.close'), {
+        duration: 2200
+      });
+      return;
+    }
+
+    const shouldContinue = await this.confirmAction(
+      this.i18nService.translate('vacancies.list.deleteAllConfirm'),
+      this.i18nService.translate('vacancies.list.deleteAllConfirmWarning'),
+      this.i18nService.translate('common.yes'),
+      this.i18nService.translate('common.no')
+    );
+
+    if (!shouldContinue) {
+      return;
+    }
+
+    const passwordDialogRef = this.dialog.open(PasswordConfirmDialogComponent, {
+      maxWidth: '460px',
+      data: {
+        title: this.i18nService.translate('vacancies.list.deleteAllPasswordTitle'),
+        message: this.i18nService.translate('vacancies.list.deleteAllPasswordMessage')
+      }
+    });
+    const password = await firstValueFrom(passwordDialogRef.afterClosed());
+    if (!password) {
+      return;
+    }
+
+    if (!this.authService.verifyCurrentSessionPassword(password)) {
+      this.snackBar.open(
+        this.i18nService.translate('vacancies.list.deleteAllPasswordInvalid'),
+        this.i18nService.translate('common.close'),
+        { duration: 3200 }
+      );
+      return;
+    }
+
+    this.vacancyService.softDeleteAllForCurrentUser();
+    this.dialog.open(ConfirmationDialogComponent, {
+      maxWidth: '520px',
+      data: {
+        variant: 'info',
+        title: this.i18nService.translate('vacancies.list.deleteAllSuccessTitle'),
+        message: this.i18nService.translate('vacancies.list.deleteAllSuccessMessage'),
+        details: [
+          this.i18nService.translate('vacancies.exportDialog.vacancies', { count: activeVacanciesCount }),
+          this.i18nService.translate('vacancies.exportDialog.events', { count: activeEventsCount }),
+          this.i18nService.translate('vacancies.exportDialog.followUps', { count: activeFollowUpsCount })
+        ]
+      }
+    });
+  }
+
   protected exportFilteredToExcel(): void {
     const filteredVacancies = this.filteredVacancies();
     if (filteredVacancies.length === 0) {
@@ -245,15 +308,20 @@ export class VacanciesListPageComponent {
     }
   }
 
-  private async confirmAction(message: string): Promise<boolean> {
+  private async confirmAction(
+    message: string,
+    warningMessage?: string,
+    confirmLabelKey?: string,
+    cancelLabelKey?: string
+  ): Promise<boolean> {
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       maxWidth: '460px',
       data: {
         title: this.i18nService.translate('vacancies.deleteDialog.title'),
         message,
-        warningMessage: this.i18nService.translate('vacancies.deleteDialog.irreversibleWarning'),
-        cancelLabelKey: 'common.cancel',
-        confirmLabelKey: 'common.delete'
+        warningMessage: warningMessage ?? this.i18nService.translate('vacancies.deleteDialog.irreversibleWarning'),
+        cancelLabelKey: cancelLabelKey ?? 'common.cancel',
+        confirmLabelKey: confirmLabelKey ?? 'common.delete'
       }
     });
 

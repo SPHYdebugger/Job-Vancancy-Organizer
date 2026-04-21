@@ -169,6 +169,7 @@ export class VacancyExcelImportService {
 
         return {
           id: this.asString(row['id']) ?? `fol_${crypto.randomUUID()}`,
+          deletedAt: this.asNullableString(row['deletedAt']),
           vacancyId,
           plannedDate: this.asString(row['plannedDate']) ?? now,
           completedAt: this.asNullableString(row['completedAt']),
@@ -206,7 +207,7 @@ export class VacancyExcelImportService {
       domain: this.asNullableString(row['domain']),
       location: this.asNullableString(row['location']),
       headquarters: this.asNullableString(row['headquarters']),
-      modality: (this.asString(row['modality']) as Vacancy['modality']) ?? 'remote',
+      modality: this.parseModality(this.asString(row['modality'])),
       employmentType: (this.asString(row['employmentType']) as Vacancy['employmentType']) ?? 'full_time',
       seniority: (this.asString(row['seniority']) as Vacancy['seniority']) ?? 'unknown',
       techStack: this.asStringArray(row['techStack']),
@@ -222,10 +223,10 @@ export class VacancyExcelImportService {
       contactEmail: this.asNullableString(row['contactEmail']),
       contactLinkedin: this.asNullableString(row['contactLinkedin']),
       lastContactAt: this.asNullableString(row['lastContactAt']),
-      applicationStatus: (this.asString(row['applicationStatus']) as Vacancy['applicationStatus']) ?? 'pending',
+      applicationStatus: this.parseApplicationStatus(this.asString(row['applicationStatus'])),
       processStage: this.asNullableString(row['processStage']),
-      companyResponse: (this.asString(row['companyResponse']) as Vacancy['companyResponse']) ?? 'none',
-      priority: (this.asString(row['priority']) as Vacancy['priority']) ?? 'medium',
+      companyResponse: this.parseCompanyResponse(this.asString(row['companyResponse'])),
+      priority: this.parsePriority(this.asString(row['priority'])),
       discoveredAt: this.asNullableString(row['discoveredAt']),
       applicationDate: this.asNullableString(row['applicationDate']),
       lastStatusChangeAt: this.asNullableString(row['lastStatusChangeAt']),
@@ -343,5 +344,67 @@ export class VacancyExcelImportService {
       .split(',')
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
+  }
+
+  private parseApplicationStatus(value: string | null): Vacancy['applicationStatus'] {
+    const normalized = (value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/-/g, '_');
+    const allowed = new Set<Vacancy['applicationStatus']>([
+      'draft',
+      'saved',
+      'pending',
+      'cv_sent',
+      'applied',
+      'in_review',
+      'hr_contact',
+      'interview',
+      'technical_test',
+      'offer',
+      'finalist',
+      'rejected',
+      'withdrawn',
+      'no_response',
+      'hired',
+      'archived'
+    ]);
+
+    return allowed.has(normalized as Vacancy['applicationStatus']) ? (normalized as Vacancy['applicationStatus']) : 'pending';
+  }
+
+  private parsePriority(value: string | null): Vacancy['priority'] {
+    const normalized = (value ?? '').trim().toLowerCase();
+    if (normalized === 'high' || normalized === 'medium' || normalized === 'low') {
+      return normalized;
+    }
+    return 'medium';
+  }
+
+  private parseModality(value: string | null): Vacancy['modality'] {
+    const normalized = (value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/-/g, '_');
+
+    if (normalized === 'remote' || normalized === 'hybrid' || normalized === 'on_site') {
+      return normalized;
+    }
+
+    if (normalized === 'onsite') {
+      return 'on_site';
+    }
+
+    return 'remote';
+  }
+
+  private parseCompanyResponse(value: string | null): Vacancy['companyResponse'] {
+    const normalized = (value ?? '').trim().toLowerCase();
+    if (normalized === 'none' || normalized === 'pending' || normalized === 'positive' || normalized === 'negative') {
+      return normalized;
+    }
+    return 'none';
   }
 }

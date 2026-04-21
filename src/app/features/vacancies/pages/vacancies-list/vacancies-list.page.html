@@ -8,6 +8,9 @@
       <button type="button" mat-flat-button (click)="exportFilteredToExcel()">
         {{ 'vacancies.list.exportExcel' | t }}
       </button>
+      <button type="button" mat-stroked-button color="warn" (click)="softDeleteAllVacancies()">
+        {{ 'vacancies.list.deleteAll' | t }}
+      </button>
     </div>
   </header>
 

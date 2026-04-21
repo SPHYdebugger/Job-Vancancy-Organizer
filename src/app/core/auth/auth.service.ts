@@ -41,6 +41,21 @@ export class AuthService {
     return this.getSession()?.userId ?? null;
   }
 
+  public verifyCurrentSessionPassword(password: string): boolean {
+    const session = this.getSession();
+    if (!session) {
+      return false;
+    }
+
+    if (session.isDemo) {
+      return password === environment.auth.demoUser.password;
+    }
+
+    const users = this.getRegisteredUsers();
+    const matchedUser = users.find((user) => user.id === session.userId || user.email.toLowerCase() === session.email.toLowerCase());
+    return Boolean(matchedUser && matchedUser.password === password);
+  }
+
   public login(credentials: LoginCredentials): LoginResult {
     const identifier = credentials.username.trim().toLowerCase();
     const password = credentials.password;

@@ -17,8 +17,8 @@ export function responseToTranslationKey(response: CompanyResponseState): Transl
   return `response.${response}`;
 }
 
-export function dashboardStatusToTranslationKey(status: string): TranslationKey {
-  const normalized = status.toLowerCase().replace(/\s+/g, '_').replace('-', '_');
+export function dashboardStatusToTranslationKey(status: string | null | undefined): TranslationKey {
+  const normalized = (status ?? '').toLowerCase().replace(/\s+/g, '_').replace('-', '_');
   const allowed: Record<string, TranslationKey> = {
     draft: 'status.draft',
     saved: 'status.saved',

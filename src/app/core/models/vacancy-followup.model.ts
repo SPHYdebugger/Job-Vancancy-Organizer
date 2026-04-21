@@ -2,6 +2,7 @@ export type FollowUpStatus = 'pending' | 'completed' | 'cancelled' | 'expired';
 
 export interface VacancyFollowUp {
   id: string;
+  deletedAt: string | null;
   vacancyId: string;
   plannedDate: string;
   completedAt: string | null;
@@ -14,4 +15,3 @@ export interface VacancyFollowUp {
   createdAt: string;
   updatedAt: string;
 }
-
