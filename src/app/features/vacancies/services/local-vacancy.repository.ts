@@ -325,37 +325,9 @@ export class LocalVacancyRepository implements VacancyRepository {
       return;
     }
 
-    const deletedAt = new Date().toISOString();
-    const updatedVacancies = this.vacanciesSubject.value.map((vacancy) =>
-      vacancy.deletedAt
-        ? vacancy
-        : {
-            ...vacancy,
-            deletedAt,
-            updatedAt: deletedAt
-          }
-    );
-    const updatedEvents = this.eventsSubject.value.map((event) =>
-      event.deletedAt
-        ? event
-        : {
-            ...event,
-            deletedAt
-          }
-    );
-    const updatedFollowUps = this.followUpsSubject.value.map((followUp) =>
-      followUp.deletedAt
-        ? followUp
-        : {
-            ...followUp,
-            deletedAt,
-            updatedAt: deletedAt
-          }
-    );
-
-    this.commitEvents(updatedEvents, true);
-    this.commitFollowUps(updatedFollowUps, true);
-    this.commit(updatedVacancies);
+    this.commitEvents([], true);
+    this.commitFollowUps([], true);
+    this.commit([]);
   }
 
   public importSnapshot(snapshot: {
@@ -370,6 +342,8 @@ export class LocalVacancyRepository implements VacancyRepository {
     const normalizedVacancies = snapshot.vacancies.map((vacancy) =>
       normalizeVacancy(vacancy as Partial<Vacancy> & Record<string, unknown>)
     );
+    const existingVacancyIds = new Set(this.vacanciesSubject.value.map((vacancy) => vacancy.id));
+    const newVacancies = normalizedVacancies.filter((vacancy) => !existingVacancyIds.has(vacancy.id));
     const vacancyIds = new Set(normalizedVacancies.map((vacancy) => vacancy.id));
     const normalizedEvents = snapshot.events
       .filter((event) => vacancyIds.has(event.vacancyId))
@@ -384,10 +358,18 @@ export class LocalVacancyRepository implements VacancyRepository {
       ...followUp,
       deletedAt: followUp.deletedAt ?? (followUp as VacancyFollowUp & { deleted_at?: string | null }).deleted_at ?? null
     }));
+    const existingEventIds = new Set(this.eventsSubject.value.map((event) => event.id));
+    const existingFollowUpIds = new Set(this.followUpsSubject.value.map((followUp) => followUp.id));
+    const newEvents = normalizedEvents.filter((event) => !existingEventIds.has(event.id));
+    const newFollowUps = followUpsWithDeleteState.filter((followUp) => !existingFollowUpIds.has(followUp.id));
 
-    this.commitEvents(normalizedEvents, true);
-    this.commitFollowUps(followUpsWithDeleteState, true);
-    this.commit(normalizedVacancies);
+    const mergedVacancies = [...newVacancies, ...this.vacanciesSubject.value];
+    const mergedEvents = [...newEvents, ...this.eventsSubject.value];
+    const mergedFollowUps = [...newFollowUps, ...this.followUpsSubject.value];
+
+    this.commitEvents(mergedEvents, true);
+    this.commitFollowUps(mergedFollowUps, true);
+    this.commit(mergedVacancies);
   }
 
   public replaceAll(vacancies: Vacancy[]): void {

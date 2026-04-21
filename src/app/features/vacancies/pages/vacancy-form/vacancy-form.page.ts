@@ -152,6 +152,9 @@ export class VacancyFormPageComponent {
     this.isImporting.set(true);
 
     try {
+      const beforeVacanciesCount = this.vacancyService.getAll().length;
+      const beforeEventsCount = this.vacancyService.getEvents().length;
+      const beforeFollowUpsCount = this.vacancyService.getFollowUps().length;
       const importResult = await this.vacancyExcelImportService.importFromFile(file);
 
       if (importResult.mode === 'snapshot') {
@@ -165,6 +168,17 @@ export class VacancyFormPageComponent {
           this.vacancyService.create(vacancy);
         }
       }
+
+      const afterVacanciesCount = this.vacancyService.getAll().length;
+      const afterEventsCount = this.vacancyService.getEvents().length;
+      const afterFollowUpsCount = this.vacancyService.getFollowUps().length;
+
+      const addedVacancies = Math.max(0, afterVacanciesCount - beforeVacanciesCount);
+      const addedEvents = Math.max(0, afterEventsCount - beforeEventsCount);
+      const addedFollowUps = Math.max(0, afterFollowUpsCount - beforeFollowUpsCount);
+      const skippedExistingVacancies = Math.max(0, importResult.vacancies.length - addedVacancies);
+      const skippedExistingEvents = Math.max(0, importResult.events.length - addedEvents);
+      const skippedExistingFollowUps = Math.max(0, importResult.followUps.length - addedFollowUps);
 
       this.dialog.open(ConfirmationDialogComponent, {
         maxWidth: '520px',
@@ -182,8 +196,18 @@ export class VacancyFormPageComponent {
                 : 'vacancies.importDialog.modeVacanciesOnly'
             ),
             this.i18nService.translate('vacancies.importDialog.vacancies', { count: importResult.vacancies.length }),
+            this.i18nService.translate('vacancies.importDialog.vacanciesAdded', { count: addedVacancies }),
+            this.i18nService.translate('vacancies.importDialog.vacanciesSkippedExisting', {
+              count: skippedExistingVacancies
+            }),
             this.i18nService.translate('vacancies.importDialog.events', { count: importResult.events.length }),
+            this.i18nService.translate('vacancies.importDialog.eventsAdded', { count: addedEvents }),
+            this.i18nService.translate('vacancies.importDialog.eventsSkippedExisting', { count: skippedExistingEvents }),
             this.i18nService.translate('vacancies.importDialog.followUps', { count: importResult.followUps.length }),
+            this.i18nService.translate('vacancies.importDialog.followUpsAdded', { count: addedFollowUps }),
+            this.i18nService.translate('vacancies.importDialog.followUpsSkippedExisting', {
+              count: skippedExistingFollowUps
+            }),
             this.i18nService.translate('vacancies.importDialog.skipped', { count: importResult.skippedRows })
           ]
         }
