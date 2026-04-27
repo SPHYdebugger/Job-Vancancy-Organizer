@@ -113,19 +113,22 @@ export class VacancyUrlImportService {
   }
 
   private async fetchPageContent(url: URL): Promise<string> {
+    const lowerHost = url.hostname.toLowerCase();
+    const supplementalContent = lowerHost.includes('linkedin.com') ? await this.fetchLinkedInSupplementalContent(url) : '';
+
     const directContent = await this.tryFetch(url.toString());
     if (directContent) {
-      return directContent;
+      return `${directContent}\n${supplementalContent}`;
     }
 
     const normalizedUrl = `${url.protocol}//${url.host}${url.pathname}${url.search}${url.hash}`;
     const proxyUrl = `https://r.jina.ai/http://${normalizedUrl.replace(/^https?:\/\//, '')}`;
     const proxiedContent = await this.tryFetch(proxyUrl);
     if (proxiedContent) {
-      return proxiedContent;
+      return `${proxiedContent}\n${supplementalContent}`;
     }
 
-    return '';
+    return supplementalContent;
   }
 
   private async tryFetch(targetUrl: string): Promise<string | null> {
@@ -194,13 +197,35 @@ export class VacancyUrlImportService {
     this.extractGenericCandidates(plainText, positionCandidates, companyCandidates, locationCandidates, salaryCandidates, descriptionCandidates);
 
     if (lowerHost.includes('linkedin.com')) {
-      this.extractLinkedInCandidates(plainText, titleFallback, positionCandidates, companyCandidates, locationCandidates, salaryCandidates);
+      this.extractLinkedInCandidates(
+        url,
+        normalizedContent,
+        plainText,
+        titleFallback,
+        positionCandidates,
+        companyCandidates,
+        locationCandidates,
+        salaryCandidates
+      );
     } else if (lowerHost.includes('infojobs.net')) {
       this.extractInfoJobsCandidates(plainText, titleFallback, positionCandidates, companyCandidates, locationCandidates, salaryCandidates);
     }
 
-    const company = this.pickBestCandidate(companyCandidates) || this.extractCompanyFromUrl(url);
-    const position = this.pickBestCandidate(positionCandidates) || this.extractPositionFromUrl(url);
+    const strictCompanyCandidates = companyCandidates.filter((candidate) => this.isLikelyCompanyName(candidate.value));
+    const strictPositionCandidates = positionCandidates.filter((candidate) => this.isLikelyPositionTitle(candidate.value));
+
+    const linkedInBestStrictCompany = lowerHost.includes('linkedin.com')
+      ? this.pickBestCandidate(strictCompanyCandidates.filter((candidate) => candidate.score >= 120))
+      : null;
+    const company =
+      linkedInBestStrictCompany ||
+      this.pickBestCandidate(strictCompanyCandidates) ||
+      this.pickBestCandidate(companyCandidates) ||
+      this.extractCompanyFromUrl(url);
+    const position =
+      this.pickBestCandidate(strictPositionCandidates) ||
+      this.pickBestCandidate(positionCandidates) ||
+      this.extractPositionFromUrl(url);
     const location = this.pickBestCandidate(locationCandidates) || this.extractLocationFromText(plainText);
     const salaryText = this.pickBestCandidate(salaryCandidates) || this.extractSalaryFromText(plainText);
     const description = this.pickBestCandidate(descriptionCandidates) || this.cleanDescription(metaDescription);
@@ -217,6 +242,8 @@ export class VacancyUrlImportService {
   }
 
   private extractLinkedInCandidates(
+    sourceUrl: URL,
+    htmlContent: string,
     plainText: string,
     titleFallback: string | null,
     positionCandidates: ExtractCandidate[],
@@ -224,6 +251,127 @@ export class VacancyUrlImportService {
     locationCandidates: ExtractCandidate[],
     salaryCandidates: ExtractCandidate[]
   ): void {
+    const jobId = this.extractLinkedInJobId(sourceUrl);
+    if (jobId) {
+      const scopedBlock = this.extractLinkedInJobScopedBlock(htmlContent, jobId);
+      if (scopedBlock) {
+        const scopedCompanyFromLink = this.matchFirstGroup(
+          scopedBlock,
+          /<a[^>]*href=["'][^"']*linkedin\.com\/company\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/i
+        );
+        this.pushCandidate(companyCandidates, this.cleanTextCandidate(this.toPlainText(scopedCompanyFromLink ?? '')), 150);
+
+        const scopedCompanyFromAria = this.matchFirstGroup(
+          scopedBlock,
+          /aria-label=["'](?:Empresa|Company),\s*([^"']{2,120})["']/i
+        );
+        this.pushCandidate(companyCandidates, this.cleanTextCandidate(scopedCompanyFromAria), 148);
+
+        const scopedCompanyFromLogoAria = this.matchFirstGroup(
+          scopedBlock,
+          /aria-label=["'](?:Logotipo de empresa para|Company logo for)\s*([^"']{2,120})["']/i
+        );
+        this.pushCandidate(companyCandidates, this.cleanTextCandidate(scopedCompanyFromLogoAria), 146);
+
+        const scopedPosition = this.matchFirstGroup(
+          scopedBlock,
+          /<p[^>]*>([^<]{4,180})<\/p>/i
+        );
+        this.pushCandidate(positionCandidates, this.cleanTextCandidate(this.toPlainText(scopedPosition ?? '')), 142);
+      }
+    }
+
+    const titlePosition = this.matchFirstGroup(htmlContent, /<title>\s*([^|<]{4,180})\s*\|/i);
+    const titleCompany = this.matchFirstGroup(htmlContent, /<title>\s*[^|<]{2,180}\s*\|\s*([^|<]{2,120})\s*\|/i);
+    this.pushCandidate(positionCandidates, this.cleanTextCandidate(this.toPlainText(titlePosition ?? '')), 132);
+    this.pushCandidate(companyCandidates, this.cleanTextCandidate(this.toPlainText(titleCompany ?? '')), 130);
+
+    for (const companyMatch of this.matchAllGroups(
+      htmlContent,
+      /<a[^>]*href=["'][^"']*linkedin\.com\/company\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi
+    )) {
+      const company = this.cleanTextCandidate(this.toPlainText(companyMatch));
+      if (company && this.isLikelyCompanyName(company)) {
+        this.pushCandidate(companyCandidates, company, 108);
+      }
+    }
+
+    const companyFromAnchor = this.matchFirstGroup(
+      htmlContent,
+      /<a[^>]*href=["']https?:\/\/(?:www\.)?linkedin\.com\/company\/[^"']+["'][^>]*>([^<]{2,100})<\/a>/i
+    );
+    this.pushCandidate(companyCandidates, this.cleanTextCandidate(companyFromAnchor), 122);
+
+    const companyFromMarkdownLink = this.matchFirstGroup(
+      htmlContent,
+      /\[([^\]]{2,100})\]\(https?:\/\/(?:www\.)?linkedin\.com\/company\/[^\)]+\)/i
+    );
+    this.pushCandidate(companyCandidates, this.cleanTextCandidate(companyFromMarkdownLink), 118);
+
+    const companyFromLogoAria = this.matchFirstGroup(
+      htmlContent,
+      /aria-label=["'](?:Logotipo de empresa para|Company logo for)\s*([^"']{2,120})["']/i
+    );
+    this.pushCandidate(companyCandidates, this.cleanTextCandidate(companyFromLogoAria), 136);
+
+    const companyFromAria = this.matchFirstGroup(
+      htmlContent,
+      /aria-label=["'](?:Empresa|Company),\s*([^"']{2,120})["']/i
+    );
+    this.pushCandidate(companyCandidates, this.cleanTextCandidate(companyFromAria), 134);
+
+    const linkedInPTagMatches = htmlContent.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+    for (const match of linkedInPTagMatches) {
+      const candidateText = this.cleanTextCandidate(this.toPlainText(match[1] ?? ''));
+      if (!candidateText || !this.isLikelyPositionTitle(candidateText)) {
+        continue;
+      }
+      if (candidateText.toLowerCase().includes('españa') || candidateText.toLowerCase().includes('en remoto')) {
+        continue;
+      }
+      this.pushCandidate(positionCandidates, candidateText, 118);
+      break;
+    }
+
+    const aboutJobBlockTitle = this.matchFirstGroup(
+      htmlContent,
+      /componentkey=["']JobDetails_AboutTheJob_[^"']+["'][\s\S]{0,2500}?<p[^>]*>([\s\S]{4,180}?)<\/p>/i
+    );
+    this.pushCandidate(positionCandidates, this.cleanTextCandidate(this.toPlainText(aboutJobBlockTitle ?? '')), 122);
+
+    const linkedInHeadingMatches = htmlContent.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/gi);
+    for (const match of linkedInHeadingMatches) {
+      const candidateText = this.cleanTextCandidate(this.toPlainText(match[1] ?? ''));
+      if (!candidateText || !this.isLikelyPositionTitle(candidateText)) {
+        continue;
+      }
+      this.pushCandidate(positionCandidates, candidateText, 116);
+      break;
+    }
+
+    for (const candidateText of this.matchAllGroups(htmlContent, /"title"\s*:\s*"([^"]{4,180})"/gi)) {
+      const cleaned = this.cleanTextCandidate(this.decodeJsonEscapes(candidateText));
+      if (cleaned && this.isLikelyPositionTitle(cleaned)) {
+        this.pushCandidate(positionCandidates, cleaned, 114);
+      }
+    }
+
+    for (const candidateText of this.matchAllGroups(htmlContent, /"(?:companyName|company|company_name)"\s*:\s*"([^"]{2,140})"/gi)) {
+      const cleaned = this.cleanTextCandidate(this.decodeJsonEscapes(candidateText));
+      if (cleaned && this.isLikelyCompanyName(cleaned)) {
+        this.pushCandidate(companyCandidates, cleaned, 114);
+      }
+    }
+
+    const titleCompanySplit = this.matchFirstGroup(titleFallback ?? '', /(.*?)\s*[-|]\s*([^|]{2,90})/i);
+    if (titleCompanySplit) {
+      const split = (titleFallback ?? '').split(/[-|]/).map((value) => value.trim()).filter(Boolean);
+      if (split.length >= 2) {
+        this.pushCandidate(positionCandidates, this.cleanTextCandidate(split[0]), 110);
+        this.pushCandidate(companyCandidates, this.cleanTextCandidate(split[1]), 108);
+      }
+    }
+
     const firstHeading = this.matchFirstGroup(plainText, /^#\s+([^\n|]{3,120})/m);
     this.pushCandidate(positionCandidates, this.cleanTextCandidate(firstHeading), 95);
 
@@ -529,6 +677,80 @@ export class VacancyUrlImportService {
     return sorted[0]?.value ?? null;
   }
 
+  private isLikelyCompanyName(value: string): boolean {
+    const normalized = value.trim();
+    if (!normalized || normalized.length < 2 || normalized.length > 90) {
+      return false;
+    }
+
+    if (/^[a-z0-9-]+\.[a-z]{2,}$/i.test(normalized)) {
+      return false;
+    }
+
+    const lower = normalized.toLowerCase();
+    const blockedFragments = [
+      'personas',
+      'oficinas',
+      'jobs in',
+      'new jobs',
+      'job search',
+      'empleos',
+      'oferta',
+      'responsabilidades',
+      'requisitos',
+      'experience',
+      'responsibilities',
+      'job details',
+      'linkedin',
+      'kapa.ai'
+    ];
+    if (blockedFragments.some((fragment) => lower.includes(fragment))) {
+      return false;
+    }
+
+    if (/[.!?]/.test(normalized) || normalized.split(',').length > 2) {
+      return false;
+    }
+
+    const words = normalized.split(/\s+/);
+    if (words.length > 8) {
+      return false;
+    }
+
+    return /[A-Za-zÀ-ÿ]/.test(normalized);
+  }
+
+  private isLikelyPositionTitle(value: string): boolean {
+    const normalized = value.trim();
+    if (!normalized || normalized.length < 4 || normalized.length > 140) {
+      return false;
+    }
+
+    if (/^\d+$/.test(normalized)) {
+      return false;
+    }
+
+    const lower = normalized.toLowerCase();
+    const blockedFragments = [
+      'jobs in',
+      'new jobs',
+      'job search',
+      'ofertas de trabajo',
+      'compartido hace',
+      'linkedin',
+      'infojobs',
+      'about the job',
+      'acerca del empleo',
+      'job details'
+    ];
+    if (blockedFragments.some((fragment) => lower.includes(fragment))) {
+      return false;
+    }
+
+    const alphaChars = normalized.replace(/[^A-Za-zÀ-ÿ]/g, '').length;
+    return alphaChars >= 4;
+  }
+
   private matchFirstGroup(content: string, regex: RegExp): string | null {
     const match = content.match(regex);
     if (!match) {
@@ -564,6 +786,10 @@ export class VacancyUrlImportService {
       return null;
     }
 
+    if (/^\d+$/.test(slug)) {
+      return null;
+    }
+
     return slug
       .replace(/[-_]/g, ' ')
       .replace(/\.(html|htm)$/i, '')
@@ -589,6 +815,10 @@ export class VacancyUrlImportService {
       .pop();
 
     if (!slug) {
+      return 'Backend Developer';
+    }
+
+    if (/^\d+$/.test(slug)) {
       return 'Backend Developer';
     }
 
@@ -848,5 +1078,64 @@ export class VacancyUrlImportService {
     }
 
     return currentValue;
+  }
+
+  private extractLinkedInJobScopedBlock(htmlContent: string, jobId: string): string | null {
+    const explicitJobHref = `/jobs/view/${jobId}`;
+    const hrefIndex = htmlContent.indexOf(explicitJobHref);
+    if (hrefIndex >= 0) {
+      const start = Math.max(0, hrefIndex - 24000);
+      const end = Math.min(htmlContent.length, hrefIndex + 9000);
+      return htmlContent.slice(start, end);
+    }
+
+    const aboutKeyRegex = new RegExp(`componentkey=["']JobDetails_AboutTheJob_${jobId}["']([\\s\\S]{0,22000})`, 'i');
+    const aboutMatch = htmlContent.match(aboutKeyRegex);
+    if (aboutMatch?.[0]) {
+      return aboutMatch[0];
+    }
+
+    return null;
+  }
+
+  private async fetchLinkedInSupplementalContent(url: URL): Promise<string> {
+    const jobId = this.extractLinkedInJobId(url);
+    if (!jobId) {
+      return '';
+    }
+
+    const guestEndpoint = `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${jobId}`;
+    const directGuest = await this.tryFetch(guestEndpoint);
+    if (directGuest) {
+      return directGuest;
+    }
+
+    const proxyGuest = await this.tryFetch(`https://r.jina.ai/http://${guestEndpoint.replace(/^https?:\/\//, '')}`);
+    return proxyGuest ?? '';
+  }
+
+  private extractLinkedInJobId(url: URL): string | null {
+    const match = url.pathname.match(/\/jobs\/view\/(\d+)/i);
+    return match?.[1] ?? null;
+  }
+
+  private matchAllGroups(content: string, regex: RegExp): string[] {
+    const results: string[] = [];
+    const matches = content.matchAll(regex);
+    for (const match of matches) {
+      const group = match[1]?.trim();
+      if (group) {
+        results.push(group);
+      }
+    }
+    return results;
+  }
+
+  private decodeJsonEscapes(value: string): string {
+    try {
+      return JSON.parse(`"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`);
+    } catch {
+      return value;
+    }
   }
 }

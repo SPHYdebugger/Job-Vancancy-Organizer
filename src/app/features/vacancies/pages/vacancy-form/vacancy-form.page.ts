@@ -6,7 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 
@@ -34,6 +34,7 @@ import { VacancyExcelImportService } from '../../services/vacancy-excel-import.s
 import { VacancyUrlImportService } from '../../services/vacancy-url-import.service';
 import { VacancyService } from '../../services/vacancy.service';
 import { UrlImportDialogComponent } from '../../../../shared/ui/url-import-dialog/url-import-dialog.component';
+import { LoadingDialogComponent } from '../../../../shared/ui/loading-dialog/loading-dialog.component';
 
 @Component({
   selector: 'app-vacancy-form-page',
@@ -477,9 +478,19 @@ export class VacancyFormPageComponent {
     }
 
     this.isImportingFromUrl.set(true);
+    let loadingDialogRef: MatDialogRef<LoadingDialogComponent> | null = null;
 
     try {
+      loadingDialogRef = this.dialog.open(LoadingDialogComponent, {
+        disableClose: true,
+        data: {
+          messageKey: 'vacancies.urlImport.analyzing'
+        }
+      });
+
       const imported = await this.vacancyUrlImportService.importFromUrl(inputUrl);
+      loadingDialogRef.close();
+      loadingDialogRef = null;
       const details = [
         `${this.i18nService.translate('vacancies.form.company')}: ${imported.vacancy.company}`,
         `${this.i18nService.translate('vacancies.form.position')}: ${imported.vacancy.position}`,
@@ -518,6 +529,8 @@ export class VacancyFormPageComponent {
       });
       void this.router.navigate(['/app/vacancies', imported.vacancy.id]);
     } catch (error) {
+      loadingDialogRef?.close();
+
       if (error instanceof Error && error.message === 'UNSUPPORTED_SOURCE') {
         this.dialog.open(ConfirmationDialogComponent, {
           maxWidth: '520px',
@@ -536,6 +549,7 @@ export class VacancyFormPageComponent {
         { duration: 4500 }
       );
     } finally {
+      loadingDialogRef?.close();
       this.isImportingFromUrl.set(false);
     }
   }
