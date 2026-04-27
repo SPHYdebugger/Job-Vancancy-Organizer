@@ -6,6 +6,9 @@
     </div>
     <div class="header-actions">
       @if (!isEditMode()) {
+        <button type="button" mat-stroked-button (click)="openUrlImport()" [disabled]="isImportingFromUrl() || isImporting()">
+          {{ isImportingFromUrl() ? ('vacancies.urlImport.analyzing' | t) : ('vacancies.form.importFromUrl' | t) }}
+        </button>
         <button type="button" mat-stroked-button (click)="openExcelImport()" [disabled]="isImporting()">
           {{ isImporting() ? ('vacancies.form.importing' | t) : ('vacancies.form.importFromExcel' | t) }}
         </button>

@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/auth.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -30,7 +31,9 @@ import {
 import { DemoRestrictionDialogComponent } from '../../../../shared/ui/demo-restriction-dialog/demo-restriction-dialog.component';
 import { ConfirmationDialogComponent } from '../../../../shared/ui/confirmation-dialog/confirmation-dialog.component';
 import { VacancyExcelImportService } from '../../services/vacancy-excel-import.service';
+import { VacancyUrlImportService } from '../../services/vacancy-url-import.service';
 import { VacancyService } from '../../services/vacancy.service';
+import { UrlImportDialogComponent } from '../../../../shared/ui/url-import-dialog/url-import-dialog.component';
 
 @Component({
   selector: 'app-vacancy-form-page',
@@ -62,6 +65,7 @@ export class VacancyFormPageComponent {
   private readonly i18nService = inject(I18nService);
   private readonly authService = inject(AuthService);
   private readonly vacancyExcelImportService = inject(VacancyExcelImportService);
+  private readonly vacancyUrlImportService = inject(VacancyUrlImportService);
   private readonly vacancyService = inject(VacancyService);
 
   private readonly editingVacancyId = this.route.snapshot.paramMap.get('id');
@@ -116,6 +120,7 @@ export class VacancyFormPageComponent {
 
   protected readonly isSaving = signal(false);
   protected readonly isImporting = signal(false);
+  protected readonly isImportingFromUrl = signal(false);
   protected readonly isEditMode = computed(() => Boolean(this.editingVacancy));
 
   protected readonly vacancyForm = this.formBuilder.nonNullable.group({
@@ -448,6 +453,91 @@ export class VacancyFormPageComponent {
       hrObservations: vacancy.hrObservations ?? '',
       tags: vacancy.tags.join(', ')
     });
+  }
+
+  protected async openUrlImport(): Promise<void> {
+    if (this.shouldBlockDemoActions()) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(UrlImportDialogComponent, {
+      maxWidth: '520px',
+      width: '100%',
+      data: {
+        titleKey: 'vacancies.urlImport.dialogTitle',
+        messageKey: 'vacancies.urlImport.dialogMessage',
+        placeholderKey: 'vacancies.urlImport.urlPlaceholder',
+        confirmKey: 'vacancies.urlImport.analyze'
+      }
+    });
+
+    const inputUrl = await firstValueFrom(dialogRef.afterClosed());
+    if (!inputUrl || typeof inputUrl !== 'string') {
+      return;
+    }
+
+    this.isImportingFromUrl.set(true);
+
+    try {
+      const imported = await this.vacancyUrlImportService.importFromUrl(inputUrl);
+      const details = [
+        `${this.i18nService.translate('vacancies.form.company')}: ${imported.vacancy.company}`,
+        `${this.i18nService.translate('vacancies.form.position')}: ${imported.vacancy.position}`,
+        `${this.i18nService.translate('vacancies.form.domain')}: ${imported.vacancy.domain ?? this.i18nService.translate('common.notAvailable')}`,
+        `${this.i18nService.translate('vacancies.form.modality')}: ${this.modalityLabel(imported.vacancy.modality)}`,
+        `${this.i18nService.translate('vacancies.form.offerSource')}: ${imported.sourceLabel}`,
+        `${this.i18nService.translate('vacancies.form.offerUrl')}: ${imported.vacancy.offerUrl ?? this.i18nService.translate('common.notAvailable')}`
+      ];
+
+      const previewDialogRef = this.dialog.open(ConfirmationDialogComponent, {
+        maxWidth: '560px',
+        data: {
+          title: this.i18nService.translate('vacancies.urlImport.previewTitle'),
+          message: this.i18nService.translate('vacancies.urlImport.previewMessage'),
+          details,
+          variant: 'confirm',
+          cancelLabelKey: 'common.cancel',
+          confirmLabelKey: 'vacancies.urlImport.insert'
+        }
+      });
+
+      const confirmed = Boolean(await firstValueFrom(previewDialogRef.afterClosed()));
+      if (!confirmed) {
+        return;
+      }
+
+      this.vacancyService.create(imported.vacancy);
+      this.dialog.open(ConfirmationDialogComponent, {
+        maxWidth: '520px',
+        data: {
+          variant: 'info',
+          title: this.i18nService.translate('vacancies.urlImport.insertedTitle'),
+          message: this.i18nService.translate('vacancies.urlImport.insertedMessage'),
+          details
+        }
+      });
+      void this.router.navigate(['/app/vacancies', imported.vacancy.id]);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'UNSUPPORTED_SOURCE') {
+        this.dialog.open(ConfirmationDialogComponent, {
+          maxWidth: '520px',
+          data: {
+            variant: 'info',
+            title: this.i18nService.translate('vacancies.urlImport.unsupportedTitle'),
+            message: this.i18nService.translate('vacancies.urlImport.unsupportedMessage')
+          }
+        });
+        return;
+      }
+
+      this.snackBar.open(
+        this.i18nService.translate('vacancies.urlImport.failed'),
+        this.i18nService.translate('common.close'),
+        { duration: 4500 }
+      );
+    } finally {
+      this.isImportingFromUrl.set(false);
+    }
   }
 
   private toIsoDateTime(value: string): string | null {
