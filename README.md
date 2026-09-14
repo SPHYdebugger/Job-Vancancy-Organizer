@@ -119,6 +119,10 @@ Configured in environment files:
 - Username: `demo.backend`
 - Password: `DemoBackend#2026`
 
+Demo vacancies are regenerated once per day with dates relative to the current week. Applications are distributed
+30% two weeks ago, 20% in the previous week, and 50% in the current week so dashboard charts remain representative.
+This refresh only replaces data belonging to the demo account.
+
 ## Excel Import
 
 From **Applied Vacancies** view:

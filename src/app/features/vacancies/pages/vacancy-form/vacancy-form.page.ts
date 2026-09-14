@@ -269,7 +269,7 @@ export class VacancyFormPageComponent {
   }
 
   protected save(): void {
-    if (this.shouldBlockDemoActions()) {
+    if (!this.editingVacancy && this.shouldBlockDemoActions()) {
       return;
     }
 
@@ -296,8 +296,12 @@ export class VacancyFormPageComponent {
     const lastStatusChangeAtIso = this.toIsoDateTime(formValue.lastStatusChangeAt);
     const nextFollowUpDateIso = this.toIsoDateTime(formValue.nextFollowUpDate);
 
-    if (this.editingVacancy) {
-      this.vacancyService.update(this.editingVacancy.id, {
+    const currentEditingVacancy = this.editingVacancyId
+      ? this.vacancyService.getById(this.editingVacancyId)
+      : this.editingVacancy;
+
+    if (currentEditingVacancy) {
+      this.vacancyService.update(currentEditingVacancy.id, {
         company: formValue.company,
         position: formValue.position,
         domain: formValue.domain || null,
@@ -338,13 +342,13 @@ export class VacancyFormPageComponent {
         updatedAt: now,
         closedAt:
           (formValue.status === 'rejected' || formValue.status === 'hired') &&
-          !this.editingVacancy.closedAt
+          !currentEditingVacancy.closedAt
             ? now
-            : this.editingVacancy.closedAt,
-        archivedAt: formValue.archived ? this.editingVacancy.archivedAt ?? now : null
+            : currentEditingVacancy.closedAt,
+        archivedAt: formValue.archived ? currentEditingVacancy.archivedAt ?? now : null
       });
 
-      void this.router.navigate(['/app/vacancies', this.editingVacancy.id]);
+      void this.router.navigate(['/app/vacancies', currentEditingVacancy.id]);
       return;
     }
 
