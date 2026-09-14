@@ -11,6 +11,7 @@ import { StorageService } from '../services/storage.service';
 
 const AUTH_SESSION_KEY = 'jvo.auth.session';
 const AUTH_USERS_KEY = 'jvo.auth.users';
+const PASSWORD_ITERATIONS = 210_000;
 
 @Injectable({
   providedIn: 'root'
@@ -41,7 +42,7 @@ export class AuthService {
     return this.getSession()?.userId ?? null;
   }
 
-  public verifyCurrentSessionPassword(password: string): boolean {
+  public async verifyCurrentSessionPassword(password: string): Promise<boolean> {
     const session = this.getSession();
     if (!session) {
       return false;
@@ -53,10 +54,10 @@ export class AuthService {
 
     const users = this.getRegisteredUsers();
     const matchedUser = users.find((user) => user.id === session.userId || user.email.toLowerCase() === session.email.toLowerCase());
-    return Boolean(matchedUser && matchedUser.password === password);
+    return matchedUser ? this.verifyUserPassword(matchedUser, password) : false;
   }
 
-  public login(credentials: LoginCredentials): LoginResult {
+  public async login(credentials: LoginCredentials): Promise<LoginResult> {
     const identifier = credentials.username.trim().toLowerCase();
     const password = credentials.password;
     const rememberSession = credentials.rememberSession ?? true;
@@ -90,7 +91,7 @@ export class AuthService {
     const users = this.getRegisteredUsers();
     const matchedUser = users.find((user) => user.email.toLowerCase() === identifier);
 
-    if (!matchedUser || matchedUser.password !== password) {
+    if (!matchedUser || !(await this.verifyUserPassword(matchedUser, password))) {
       return {
         success: false,
         messageKey: 'auth.invalidCredentials'
@@ -115,7 +116,7 @@ export class AuthService {
     };
   }
 
-  public register(input: RegisterUserInput): RegisterResult {
+  public async register(input: RegisterUserInput): Promise<RegisterResult> {
     const name = input.name.trim();
     const email = input.email.trim().toLowerCase();
     const password = input.password;
@@ -145,11 +146,14 @@ export class AuthService {
       };
     }
 
+    const passwordSalt = this.createSalt();
     const newUser: AuthUser = {
       id: `user_${crypto.randomUUID()}`,
       name,
       email,
-      password,
+      passwordHash: await this.hashPassword(password, passwordSalt, PASSWORD_ITERATIONS),
+      passwordSalt,
+      passwordIterations: PASSWORD_ITERATIONS,
       createdAt: new Date().toISOString()
     };
 
@@ -165,6 +169,62 @@ export class AuthService {
 
   private getRegisteredUsers(): AuthUser[] {
     return this.storageService.getItem<AuthUser[]>(AUTH_USERS_KEY) ?? [];
+  }
+
+  private async verifyUserPassword(user: AuthUser, password: string): Promise<boolean> {
+    if (user.passwordHash && user.passwordSalt) {
+      const candidateHash = await this.hashPassword(
+        password,
+        user.passwordSalt,
+        user.passwordIterations ?? PASSWORD_ITERATIONS
+      );
+      return candidateHash === user.passwordHash;
+    }
+
+    if (user.password !== password) {
+      return false;
+    }
+
+    const passwordSalt = this.createSalt();
+    const upgradedUser: AuthUser = {
+      ...user,
+      password: undefined,
+      passwordHash: await this.hashPassword(password, passwordSalt, PASSWORD_ITERATIONS),
+      passwordSalt,
+      passwordIterations: PASSWORD_ITERATIONS
+    };
+    const users = this.getRegisteredUsers().map((candidate) => candidate.id === user.id ? upgradedUser : candidate);
+    this.storageService.setItem(AUTH_USERS_KEY, users);
+    return true;
+  }
+
+  private createSalt(): string {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    return this.bytesToBase64(salt);
+  }
+
+  private async hashPassword(password: string, saltBase64: string, iterations: number): Promise<string> {
+    const encoder = new TextEncoder();
+    const passwordKey = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
+    const hash = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        hash: 'SHA-256',
+        salt: this.base64ToBytes(saltBase64).buffer as ArrayBuffer,
+        iterations
+      },
+      passwordKey,
+      256
+    );
+    return this.bytesToBase64(new Uint8Array(hash));
+  }
+
+  private bytesToBase64(bytes: Uint8Array): string {
+    return btoa(String.fromCharCode(...bytes));
+  }
+
+  private base64ToBytes(value: string): Uint8Array {
+    return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
   }
 
   private normalizePersistedSession(rawSession: AuthSession | null): AuthSession | null {

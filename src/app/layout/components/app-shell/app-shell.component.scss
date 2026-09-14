@@ -101,6 +101,22 @@
         transform: translateX(1px) translateY(-1px);
       }
     }
+
+    .create-action {
+      margin-top: 0.45rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      color: #172554;
+      background: #fff;
+      border-color: rgba(255, 255, 255, 0.7);
+
+      &:hover {
+        color: #172554;
+        background: #eff6ff;
+      }
+    }
   }
 
   .sidebar-footer {

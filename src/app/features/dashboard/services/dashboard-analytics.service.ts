@@ -3,8 +3,9 @@ import { Injectable } from '@angular/core';
 import { DashboardPreAggregates, createEmptyDashboardPreAggregates } from '../../../core/models/dashboard-pre-aggregates.model';
 import { DashboardAnalytics } from '../models/dashboard-analytics.model';
 import { DashboardVacancyDto } from '../../vacancies/models/vacancy-list-item.dto';
+import { VacancyEvent, VacancyEventType } from '../../../core/models/vacancy-event.model';
+import { VacancyFollowUp } from '../../../core/models/vacancy-followup.model';
 
-type DashboardPriority = 'Low' | 'Medium' | 'High';
 type DashboardStatus =
   | 'Pending'
   | 'CV Sent'
@@ -22,56 +23,35 @@ type DashboardStatus =
   providedIn: 'root'
 })
 export class DashboardAnalyticsService {
-  public buildAnalytics(vacancies: DashboardVacancyDto[], preAggregates?: DashboardPreAggregates): DashboardAnalytics {
+  public buildAnalytics(
+    vacancies: DashboardVacancyDto[],
+    preAggregates?: DashboardPreAggregates,
+    events: VacancyEvent[] = [],
+    followUps: VacancyFollowUp[] = []
+  ): DashboardAnalytics {
     const aggregate = preAggregates ?? createEmptyDashboardPreAggregates();
-    const sortedByLastUpdate = [...vacancies].sort(
-      (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
-    );
     const now = new Date();
 
+    const closedStatuses = new Set(['rejected', 'withdrawn', 'hired', 'archived']);
+    const activeCount = vacancies.filter((vacancy) => !closedStatuses.has(vacancy.applicationStatus)).length;
+    const respondedCount = vacancies.filter((vacancy) => ['positive', 'negative'].includes(vacancy.companyResponse)).length;
+    const responseBase = vacancies.filter((vacancy) => !['draft', 'saved'].includes(vacancy.applicationStatus)).length;
+    const responseRate = responseBase > 0 ? Math.round((respondedCount / responseBase) * 100) : 0;
+    const interviewVacancyIds = new Set(
+      events.filter((event) => ['interview_scheduled', 'interview_completed'].includes(event.type)).map((event) => event.vacancyId)
+    );
+    vacancies
+      .filter((vacancy) => ['interview', 'technical_test', 'offer', 'finalist', 'hired'].includes(vacancy.applicationStatus))
+      .forEach((vacancy) => interviewVacancyIds.add(vacancy.id));
+    const overdueFollowUps = followUps.filter(
+      (followUp) => followUp.status === 'pending' && new Date(followUp.plannedDate).getTime() < now.getTime()
+    ).length;
+
     const metrics = [
-      this.metric(
-        'total-vacancies',
-        aggregate.totalVacancies,
-        aggregate.thisMonthCreated,
-        aggregate.thisMonthCreated > 0 ? 'up' : 'neutral'
-      ),
-      this.metric(
-        'cv-sent',
-        aggregate.cvSentCount,
-        aggregate.cvSentThisMonth - aggregate.cvSentPreviousMonth,
-        aggregate.cvSentThisMonth - aggregate.cvSentPreviousMonth > 0
-          ? 'up'
-          : aggregate.cvSentThisMonth - aggregate.cvSentPreviousMonth < 0
-            ? 'down'
-            : 'neutral'
-      ),
-      this.metric('applied', aggregate.appliedCount, aggregate.appliedCount, aggregate.appliedCount > 0 ? 'up' : 'neutral'),
-      this.metric(
-        'interviews',
-        aggregate.interviewsCount,
-        aggregate.interviewsCount,
-        aggregate.interviewsCount > 0 ? 'up' : 'neutral'
-      ),
-      this.metric(
-        'technical-tests',
-        aggregate.technicalTestsCount,
-        aggregate.technicalTestsCount,
-        'neutral'
-      ),
-      this.metric(
-        'rejected',
-        aggregate.rejectedCount,
-        aggregate.rejectedThisMonth,
-        aggregate.rejectedThisMonth > 0 ? 'down' : 'neutral'
-      ),
-      this.metric(
-        'no-response',
-        aggregate.noResponseCount,
-        aggregate.noResponseCount,
-        aggregate.noResponseCount > 0 ? 'down' : 'neutral'
-      ),
-      this.metric('followups', aggregate.pendingFollowUpsCount, aggregate.dueThisWeek, 'neutral')
+      this.metric('active', activeCount, aggregate.thisMonthCreated, activeCount > 0 ? 'up' : 'neutral'),
+      { ...this.metric('response-rate', responseRate, respondedCount, responseRate > 0 ? 'up' : 'neutral'), suffix: '%' },
+      this.metric('interviews', interviewVacancyIds.size, interviewVacancyIds.size, interviewVacancyIds.size > 0 ? 'up' : 'neutral'),
+      this.metric('overdue-followups', overdueFollowUps, overdueFollowUps, overdueFollowUps > 0 ? 'down' : 'neutral')
     ];
 
     const monthlyApplications = this.buildMonthlyApplications(aggregate);
@@ -79,35 +59,20 @@ export class DashboardAnalyticsService {
     const modalityDistribution = this.buildModalityDistribution(aggregate);
     const stackBreakdown = this.buildStackBreakdown(aggregate);
 
-    const recentActivity = sortedByLastUpdate.slice(0, 4).map((vacancy) => ({
-      id: vacancy.id,
-      title: vacancy.company,
-      detail: `${vacancy.position} · ${this.toDashboardStatus(vacancy.applicationStatus)}`,
-      type: this.activityType(vacancy.applicationStatus),
-      occurredAt: vacancy.updatedAt
-    }));
-
-    const nextActions = sortedByLastUpdate
-      .filter((vacancy) => vacancy.followUpPending || vacancy.nextFollowUpDate)
-      .slice(0, 4)
-      .map((vacancy) => ({
-        id: `next-${vacancy.id}`,
-        title: 'Follow up with recruiter',
-        company: vacancy.company,
-        dueDate: vacancy.nextFollowUpDate ?? this.addDays(vacancy.updatedAt, 7),
-        priority: this.toDashboardPriority(vacancy.priority)
-      }));
-
-    const recentVacancies = sortedByLastUpdate.slice(0, 8).map((vacancy) => ({
-      id: vacancy.id,
-      company: vacancy.company,
-      role: vacancy.position,
-      status: this.toDashboardStatus(vacancy.applicationStatus),
-      priority: this.toDashboardPriority(vacancy.priority),
-      updatedAt: vacancy.updatedAt
-    }));
-
-    const topCompanies = this.buildTopCompanies(sortedByLastUpdate);
+    const vacancyById = new Map(vacancies.map((vacancy) => [vacancy.id, vacancy]));
+    const recentActivity = [...events]
+      .sort((left, right) => new Date(right.eventAt).getTime() - new Date(left.eventAt).getTime())
+      .slice(0, 5)
+      .map((event) => {
+        const vacancy = vacancyById.get(event.vacancyId);
+        return {
+          id: event.id,
+          title: event.title,
+          detail: vacancy ? `${vacancy.company} · ${vacancy.position}` : event.description,
+          type: this.eventActivityType(event.type),
+          occurredAt: event.eventAt
+        };
+      });
 
     return {
       metrics,
@@ -115,18 +80,7 @@ export class DashboardAnalyticsService {
       statusDistribution,
       modalityDistribution,
       stackBreakdown,
-      recentActivity,
-      nextActions,
-      recentVacancies,
-      topCompanies,
-      progress: {
-        applicationsGoal: 60,
-        applicationsDone: metrics.find((metric) => metric.id === 'total-vacancies')?.value ?? 0,
-        interviewsGoal: 15,
-        interviewsDone: metrics.find((metric) => metric.id === 'interviews')?.value ?? 0,
-        followUpsGoal: 24,
-        followUpsDone: metrics.find((metric) => metric.id === 'followups')?.value ?? 0
-      }
+      recentActivity
     };
   }
 
@@ -185,44 +139,6 @@ export class DashboardAnalyticsService {
       .slice(0, 8);
   }
 
-  private buildTopCompanies(sortedVacancies: DashboardVacancyDto[]): DashboardAnalytics['topCompanies'] {
-    const companies = new Map<
-      string,
-      { touches: number; lastContactAt: string; currentStatus: DashboardStatus }
-    >();
-
-    sortedVacancies.forEach((vacancy) => {
-      const company = companies.get(vacancy.company);
-      const status = this.toDashboardStatus(vacancy.applicationStatus);
-
-      if (!company) {
-        companies.set(vacancy.company, {
-          touches: 1,
-          currentStatus: status,
-          lastContactAt: vacancy.updatedAt
-        });
-        return;
-      }
-
-      company.touches += 1;
-
-      if (new Date(vacancy.updatedAt).getTime() > new Date(company.lastContactAt).getTime()) {
-        company.lastContactAt = vacancy.updatedAt;
-        company.currentStatus = status;
-      }
-    });
-
-    return [...companies.entries()]
-      .map(([company, summary]) => ({
-        company,
-        touches: summary.touches,
-        currentStatus: summary.currentStatus,
-        lastContactAt: summary.lastContactAt
-      }))
-      .sort((left, right) => right.touches - left.touches)
-      .slice(0, 5);
-  }
-
   private toDashboardStatus(status: DashboardVacancyDto['applicationStatus']): DashboardStatus {
     const map: Record<DashboardVacancyDto['applicationStatus'], DashboardStatus> = {
       draft: 'Pending',
@@ -246,34 +162,16 @@ export class DashboardAnalyticsService {
     return map[status] ?? 'Pending';
   }
 
-  private toDashboardPriority(priority: DashboardVacancyDto['priority']): DashboardPriority {
-    const map: Record<DashboardVacancyDto['priority'], DashboardPriority> = {
-      low: 'Low',
-      medium: 'Medium',
-      high: 'High'
-    };
-
-    return map[priority];
-  }
-
-  private addDays(baseDate: string, days: number): string {
-    const date = new Date(baseDate);
-    date.setDate(date.getDate() + days);
-    return date.toISOString().slice(0, 10);
-  }
-
-  private activityType(
-    status: DashboardVacancyDto['applicationStatus']
-  ): 'status_update' | 'interview' | 'follow_up' | 'response' {
-    if (status === 'interview' || status === 'technical_test') {
+  private eventActivityType(type: VacancyEventType): 'status_update' | 'interview' | 'follow_up' | 'response' {
+    if (type === 'interview_scheduled' || type === 'interview_completed' || type.startsWith('technical_test')) {
       return 'interview';
     }
 
-    if (status === 'no_response') {
+    if (type.startsWith('follow_up')) {
       return 'follow_up';
     }
 
-    if (status === 'rejected' || status === 'hired' || status === 'finalist') {
+    if (type === 'response_received' || type === 'rejected' || type === 'hired' || type.startsWith('offer_')) {
       return 'response';
     }
 

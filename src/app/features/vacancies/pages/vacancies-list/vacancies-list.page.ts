@@ -5,10 +5,10 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { startWith } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
@@ -42,10 +42,11 @@ type SortOption =
   | 'priority_asc';
 type SortColumn = 'company' | 'position' | 'status' | 'modality' | 'application' | 'priority' | 'updated';
 type SortDirection = 'asc' | 'desc';
+type QuickView = 'all' | 'active' | 'follow_up' | 'interview' | 'closed';
 
 interface VacancyFilters {
+  quickView: QuickView;
   search: string;
-  company: string;
   status: string;
   modality: string;
   priority: string;
@@ -64,11 +65,11 @@ interface VacancyFilters {
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    MatChipsModule,
     MatButtonModule,
     MatSnackBarModule,
     MatFormFieldModule,
     MatInputModule,
+    MatMenuModule,
     MatSelectModule,
     TranslatePipe
   ],
@@ -93,11 +94,12 @@ export class VacanciesListPageComponent {
 
   protected readonly currentPage = signal(0);
   protected readonly pageSizeOptions = [10, 20, 50];
+  protected readonly quickViews: QuickView[] = ['all', 'active', 'follow_up', 'interview', 'closed'];
   protected readonly locale = this.i18nService.locale;
 
   protected readonly filtersForm = this.formBuilder.nonNullable.group<VacancyFilters>({
+    quickView: 'all',
     search: '',
-    company: 'all',
     status: 'all',
     modality: 'all',
     priority: 'all',
@@ -120,7 +122,6 @@ export class VacanciesListPageComponent {
     }
   );
 
-  protected readonly companyOptions = computed(() => this.extractUniqueValues(this.vacancies().map((item) => item.company)));
   protected readonly statusOptions = computed(() =>
     this.extractUniqueValues(this.vacancies().map((item) => item.applicationStatus))
   );
@@ -143,6 +144,11 @@ export class VacanciesListPageComponent {
   protected readonly totalVacancies = computed(() => this.vacancies().length);
   protected readonly hasAnyVacancies = computed(() => this.totalVacancies() > 0);
   protected readonly filteredCount = computed(() => this.filteredVacancies().length);
+  protected readonly advancedFilterCount = computed(() => {
+    const filters = this.normalizeFilters(this.filters());
+    return [filters.modality, filters.priority, filters.stack, filters.headquarters]
+      .filter((value) => value !== 'all').length + Number(Boolean(filters.fromDate)) + Number(Boolean(filters.toDate));
+  });
 
   protected readonly pageSize = computed(() => this.normalizeFilters(this.filters()).pageSize || 20);
   protected readonly totalPages = computed(() => {
@@ -232,7 +238,7 @@ export class VacanciesListPageComponent {
       return;
     }
 
-    if (!this.authService.verifyCurrentSessionPassword(password)) {
+    if (!(await this.authService.verifyCurrentSessionPassword(password))) {
       this.snackBar.open(
         this.i18nService.translate('vacancies.list.deleteAllPasswordInvalid'),
         this.i18nService.translate('common.close'),
@@ -257,7 +263,7 @@ export class VacanciesListPageComponent {
     });
   }
 
-  protected exportFilteredToExcel(): void {
+  protected async exportFilteredToExcel(): Promise<void> {
     const filteredVacancies = this.filteredVacancies();
     if (filteredVacancies.length === 0) {
       this.snackBar.open(
@@ -276,7 +282,7 @@ export class VacanciesListPageComponent {
       .filter((followUp) => vacancyIds.has(followUp.vacancyId));
 
     try {
-      this.vacancyExcelExportService.exportSnapshot({
+      await this.vacancyExcelExportService.exportSnapshot({
         vacancies: fullVacancies,
         events: filteredEvents,
         followUps: filteredFollowUps
@@ -330,8 +336,8 @@ export class VacanciesListPageComponent {
 
   protected clearFilters(): void {
     this.filtersForm.patchValue({
+      quickView: 'all',
       search: '',
-      company: 'all',
       status: 'all',
       modality: 'all',
       priority: 'all',
@@ -342,6 +348,18 @@ export class VacanciesListPageComponent {
       sortBy: 'default',
       pageSize: 20
     });
+  }
+
+  protected setQuickView(quickView: QuickView): void {
+    this.filtersForm.patchValue({ quickView });
+  }
+
+  protected isQuickViewActive(quickView: QuickView): boolean {
+    return this.normalizeFilters(this.filters()).quickView === quickView;
+  }
+
+  protected isFollowUpOverdue(vacancy: VacancyListItemDto): boolean {
+    return Boolean(vacancy.nextFollowUpDate && new Date(vacancy.nextFollowUpDate).getTime() < Date.now());
   }
 
   protected toggleColumnSort(column: SortColumn): void {
@@ -398,6 +416,23 @@ export class VacanciesListPageComponent {
     const toTimestamp = filters.toDate ? Date.parse(filters.toDate) : null;
 
     const filtered = vacancies.filter((vacancy) => {
+      const closedStatuses = new Set(['rejected', 'withdrawn', 'hired', 'archived']);
+      if (filters.quickView === 'active' && closedStatuses.has(vacancy.applicationStatus)) {
+        return false;
+      }
+      if (filters.quickView === 'follow_up' && !vacancy.followUpPending && !vacancy.nextFollowUpDate) {
+        return false;
+      }
+      if (
+        filters.quickView === 'interview' &&
+        !['interview', 'technical_test', 'finalist', 'offer'].includes(vacancy.applicationStatus)
+      ) {
+        return false;
+      }
+      if (filters.quickView === 'closed' && !closedStatuses.has(vacancy.applicationStatus)) {
+        return false;
+      }
+
       if (searchTerm) {
         const searchableText = [
           vacancy.company,
@@ -415,10 +450,6 @@ export class VacanciesListPageComponent {
         if (!searchableText.includes(searchTerm)) {
           return false;
         }
-      }
-
-      if (filters.company !== 'all' && vacancy.company !== filters.company) {
-        return false;
       }
 
       if (filters.status !== 'all' && vacancy.applicationStatus !== filters.status) {
@@ -518,8 +549,8 @@ export class VacanciesListPageComponent {
 
   private normalizeFilters(rawFilters: Partial<VacancyFilters>): VacancyFilters {
     return {
+      quickView: rawFilters.quickView ?? 'all',
       search: rawFilters.search ?? '',
-      company: rawFilters.company ?? 'all',
       status: rawFilters.status ?? 'all',
       modality: rawFilters.modality ?? 'all',
       priority: rawFilters.priority ?? 'all',

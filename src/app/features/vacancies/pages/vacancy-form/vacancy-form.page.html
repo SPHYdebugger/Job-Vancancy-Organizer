@@ -1,264 +1,154 @@
-<section class="vacancy-form-shell surface-card">
-  <header>
+<section class="vacancy-form-shell">
+  <header class="page-header">
     <div>
+      <p class="eyebrow">{{ 'vacancies.form.eyebrow' | t }}</p>
       <h1>{{ isEditMode() ? ('vacancies.form.editTitle' | t) : ('vacancies.form.addTitle' | t) }}</h1>
-      <p>{{ 'vacancies.form.subtitle' | t }}</p>
+      <p class="page-subtitle">{{ 'vacancies.form.subtitleOptimized' | t }}</p>
     </div>
-    <div class="header-actions">
-      <button type="button" mat-stroked-button (click)="openUrlImport()" [disabled]="isImportingFromUrl() || isImporting()">
-        {{ isImportingFromUrl() ? ('vacancies.urlImport.analyzing' | t) : ('vacancies.form.importFromUrl' | t) }}
-      </button>
-      @if (!isEditMode()) {
+    <a class="back-link" routerLink="/app/vacancies">{{ 'vacancies.form.backToList' | t }}</a>
+  </header>
+
+  @if (!isEditMode()) {
+    <section class="import-panel surface-card">
+      <div><strong>{{ 'vacancies.form.importTitle' | t }}</strong><p>{{ 'vacancies.form.importDescription' | t }}</p></div>
+      <div class="import-actions">
+        <button type="button" mat-flat-button (click)="openUrlImport()" [disabled]="isImportingFromUrl() || isImporting()">
+          {{ isImportingFromUrl() ? ('vacancies.urlImport.analyzing' | t) : ('vacancies.form.importFromUrl' | t) }}
+        </button>
         <button type="button" mat-stroked-button (click)="openExcelImport()" [disabled]="isImporting()">
           {{ isImporting() ? ('vacancies.form.importing' | t) : ('vacancies.form.importFromExcel' | t) }}
         </button>
-      }
-      <a routerLink="/app/vacancies">{{ 'vacancies.form.backToList' | t }}</a>
-    </div>
-  </header>
+      </div>
+    </section>
+  }
 
-  <input
-    #excelFileInput
-    class="excel-input"
-    type="file"
-    accept=".xlsx,.xls"
-    (change)="onExcelFileSelected($event)" />
+  <input #excelFileInput class="excel-input" type="file" accept=".xlsx,.xls" (change)="onExcelFileSelected($event)" />
 
-  <form class="form-grid" [formGroup]="vacancyForm" (ngSubmit)="save()">
-    <section class="block">
-      <h2>{{ 'vacancies.form.section.general' | t }}</h2>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.company' | t }}</mat-label>
-        <input matInput formControlName="company" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.position' | t }}</mat-label>
-        <input matInput formControlName="position" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.domain' | t }}</mat-label>
-        <input matInput formControlName="domain" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.detail.location' | t }}</mat-label>
-        <input matInput formControlName="location" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.headquarters' | t }}</mat-label>
-        <input matInput formControlName="headquarters" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.modality' | t }}</mat-label>
-        <mat-select formControlName="modality">
-          @for (option of modalityOptions; track option) {
-            <mat-option [value]="option">{{ modalityLabel(option) }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.salary' | t }}</mat-label>
-        <input matInput formControlName="salary" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.detail.salaryMin' | t }}</mat-label>
-        <input matInput type="number" formControlName="salaryMin" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Salary Max</mat-label>
-        <input matInput type="number" formControlName="salaryMax" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Salary Currency</mat-label>
-        <input matInput formControlName="salaryCurrency" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Employment Type</mat-label>
-        <mat-select formControlName="employmentType">
-          @for (option of employmentTypeOptions; track option) {
-            <mat-option [value]="option">{{ option }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.detail.seniority' | t }}</mat-label>
-        <mat-select formControlName="seniority">
-          @for (option of seniorityOptions; track option) {
-            <mat-option [value]="option">{{ option }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="event-full">
-        <mat-label>{{ 'vacancies.list.stack' | t }}</mat-label>
-        <input matInput formControlName="techStack" />
-      </mat-form-field>
+  <form class="form-layout" [formGroup]="vacancyForm" (ngSubmit)="save()">
+    <section class="primary-card surface-card">
+      <div class="section-heading">
+        <div><span class="step-badge">1</span><h2>{{ 'vacancies.form.essentialTitle' | t }}</h2></div>
+        <p>{{ 'vacancies.form.essentialDescription' | t }}</p>
+      </div>
+      <div class="essential-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.form.company' | t }}</mat-label>
+          <input matInput formControlName="company" autocomplete="organization" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.form.position' | t }}</mat-label>
+          <input matInput formControlName="position" autocomplete="off" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="field-span-two">
+          <mat-label>{{ 'vacancies.form.offerUrl' | t }}</mat-label>
+          <input matInput type="url" formControlName="offerUrl" placeholder="https://" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.list.status' | t }}</mat-label>
+          <mat-select formControlName="status">
+            @for (status of statusOptions; track status) { <mat-option [value]="status">{{ statusLabel(status) }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.form.applicationDate' | t }}</mat-label>
+          <input matInput type="datetime-local" formControlName="applicationDate" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.list.priority' | t }}</mat-label>
+          <mat-select formControlName="priority">
+            @for (priority of priorityOptions; track priority) { <mat-option [value]="priority">{{ priorityLabel(priority) }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'vacancies.form.modality' | t }}</mat-label>
+          <mat-select formControlName="modality">
+            @for (option of modalityOptions; track option) { <mat-option [value]="option">{{ modalityLabel(option) }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+      </div>
     </section>
 
-    <section class="block">
-      <h2>{{ 'vacancies.form.section.contact' | t }}</h2>
+    <section class="advanced-card surface-card">
+      <div class="section-heading compact">
+        <div><span class="step-badge muted">2</span><h2>{{ 'vacancies.form.optionalTitle' | t }}</h2></div>
+        <p>{{ 'vacancies.form.optionalDescription' | t }}</p>
+      </div>
 
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.offerSource' | t }}</mat-label>
-        <input matInput formControlName="offerSource" />
-      </mat-form-field>
+      <details class="form-section">
+        <summary><span>{{ 'vacancies.form.jobDetailsTitle' | t }}</span><small>{{ 'vacancies.form.jobDetailsSummary' | t }}</small></summary>
+        <div class="details-grid">
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.form.domain' | t }}</mat-label><input matInput formControlName="domain" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.detail.location' | t }}</mat-label><input matInput formControlName="location" /></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.form.employmentType' | t }}</mat-label>
+            <mat-select formControlName="employmentType">
+              @for (option of employmentTypeOptions; track option) { <mat-option [value]="option">{{ employmentTypeLabel(option) }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.detail.seniority' | t }}</mat-label>
+            <mat-select formControlName="seniority">
+              @for (option of seniorityOptions; track option) { <mat-option [value]="option">{{ seniorityLabel(option) }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="field-span-two"><mat-label>{{ 'vacancies.list.stack' | t }}</mat-label><input matInput formControlName="techStack" [placeholder]="'vacancies.form.stackPlaceholder' | t" /></mat-form-field>
+          <mat-form-field appearance="outline" class="field-span-two"><mat-label>{{ 'vacancies.form.salary' | t }}</mat-label><input matInput formControlName="salary" [placeholder]="'vacancies.form.salaryPlaceholder' | t" /></mat-form-field>
+        </div>
+      </details>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Source Type</mat-label>
-        <mat-select formControlName="sourceType">
-          @for (option of sourceTypeOptions; track option) {
-            <mat-option [value]="option">{{ option }}</mat-option>
+      <details class="form-section">
+        <summary><span>{{ 'vacancies.form.sourceContactTitle' | t }}</span><small>{{ 'vacancies.form.sourceContactSummary' | t }}</small></summary>
+        <div class="details-grid">
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.form.offerSource' | t }}</mat-label><input matInput formControlName="offerSource" /></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'vacancies.form.sourceType' | t }}</mat-label>
+            <mat-select formControlName="sourceType">
+              @for (option of sourceTypeOptions; track option) { <mat-option [value]="option">{{ sourceTypeLabel(option) }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.form.contactName' | t }}</mat-label><input matInput formControlName="contactName" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.form.contactEmail' | t }}</mat-label><input matInput type="email" formControlName="contactEmail" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.form.contactLinkedin' | t }}</mat-label><input matInput type="url" formControlName="contactLinkedin" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.form.contactDate' | t }}</mat-label><input matInput type="datetime-local" formControlName="contactDate" /></mat-form-field>
+        </div>
+      </details>
+
+      <details class="form-section" [open]="followUpEnabled() || isClosedStatus()">
+        <summary><span>{{ 'vacancies.form.processActionsTitle' | t }}</span><small>{{ 'vacancies.form.processActionsSummary' | t }}</small></summary>
+        <div class="details-grid">
+          <mat-form-field appearance="outline" class="field-span-two"><mat-label>{{ 'vacancies.form.stage' | t }}</mat-label><input matInput formControlName="processStage" /></mat-form-field>
+          <label class="toggle-field field-span-two">
+            <input type="checkbox" formControlName="followUpPending" />
+            <span><strong>{{ 'vacancies.form.followUpPending' | t }}</strong><small>{{ 'vacancies.form.followUpHelp' | t }}</small></span>
+          </label>
+          @if (followUpEnabled()) {
+            <mat-form-field appearance="outline" class="field-span-two conditional-field"><mat-label>{{ 'vacancies.form.nextFollowUpDate' | t }}</mat-label><input matInput type="datetime-local" formControlName="nextFollowUpDate" /></mat-form-field>
           }
-        </mat-select>
-      </mat-form-field>
+          @if (selectedStatus() === 'rejected') {
+            <mat-form-field appearance="outline" class="field-span-two conditional-field"><mat-label>{{ 'vacancies.form.rejectionReason' | t }}</mat-label><textarea matInput rows="2" formControlName="rejectionReason"></textarea></mat-form-field>
+          }
+          @if (isClosedStatus()) {
+            <mat-form-field appearance="outline" class="field-span-two conditional-field"><mat-label>{{ 'vacancies.form.closureReason' | t }}</mat-label><textarea matInput rows="2" formControlName="closureReason"></textarea></mat-form-field>
+          }
+        </div>
+      </details>
 
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.offerUrl' | t }}</mat-label>
-        <input matInput formControlName="offerUrl" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.companyUrl' | t }}</mat-label>
-        <input matInput formControlName="companyUrl" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.contactName' | t }}</mat-label>
-        <input matInput formControlName="contactName" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Contact Email</mat-label>
-        <input matInput formControlName="contactEmail" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Contact LinkedIn</mat-label>
-        <input matInput formControlName="contactLinkedin" />
-      </mat-form-field>
-
-      <label>
-        {{ 'vacancies.form.contactDate' | t }}
-        <input type="datetime-local" formControlName="contactDate" />
-      </label>
-
-      <label>
-        Discovered At
-        <input type="datetime-local" formControlName="discoveredAt" />
-      </label>
-
-      <label>
-        {{ 'vacancies.form.applicationDate' | t }}
-        <input type="datetime-local" formControlName="applicationDate" />
-      </label>
+      <details class="form-section">
+        <summary><span>{{ 'vacancies.form.notesTitle' | t }}</span><small>{{ 'vacancies.form.notesSummary' | t }}</small></summary>
+        <div class="details-grid">
+          <mat-form-field appearance="outline" class="field-span-two"><mat-label>{{ 'vacancies.form.tags' | t }}</mat-label><input matInput formControlName="tags" /></mat-form-field>
+          <mat-form-field appearance="outline" class="field-span-two"><mat-label>{{ 'vacancies.form.notes' | t }}</mat-label><textarea matInput rows="4" formControlName="notes"></textarea></mat-form-field>
+          <mat-form-field appearance="outline" class="field-span-two"><mat-label>{{ 'vacancies.form.hrObservations' | t }}</mat-label><textarea matInput rows="3" formControlName="hrObservations"></textarea></mat-form-field>
+        </div>
+      </details>
     </section>
 
-    <section class="block">
-      <h2>{{ 'vacancies.form.section.process' | t }}</h2>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.list.status' | t }}</mat-label>
-        <mat-select formControlName="status">
-          @for (status of statusOptions; track status) {
-            <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.stage' | t }}</mat-label>
-        <input matInput formControlName="processStage" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.list.priority' | t }}</mat-label>
-        <mat-select formControlName="priority">
-          @for (priority of priorityOptions; track priority) {
-            <mat-option [value]="priority">{{ priorityLabel(priority) }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.companyResponse' | t }}</mat-label>
-        <mat-select formControlName="responseState">
-          @for (response of companyResponseOptions; track response) {
-            <mat-option [value]="response">{{ responseLabel(response) }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <label class="checkbox-field">
-        <input type="checkbox" formControlName="followUpPending" />
-        {{ 'vacancies.form.followUpPending' | t }}
-      </label>
-
-      <label>
-        Last Status Change At
-        <input type="datetime-local" formControlName="lastStatusChangeAt" />
-      </label>
-
-      <label>
-        {{ 'vacancies.form.nextFollowUpDate' | t }}
-        <input type="datetime-local" formControlName="nextFollowUpDate" />
-      </label>
-
-      <label class="checkbox-field">
-        <input type="checkbox" formControlName="favorite" />
-        Favorite
-      </label>
-
-      <label class="checkbox-field">
-        <input type="checkbox" formControlName="archived" />
-        Archived
-      </label>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Rejection Reason</mat-label>
-        <input matInput formControlName="rejectionReason" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Closure Reason</mat-label>
-        <input matInput formControlName="closureReason" />
-      </mat-form-field>
-    </section>
-
-    <section class="block block-wide">
-      <h2>{{ 'vacancies.form.section.notes' | t }}</h2>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.tags' | t }}</mat-label>
-        <input matInput formControlName="tags" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.notes' | t }}</mat-label>
-        <textarea matInput rows="4" formControlName="notes"></textarea>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>{{ 'vacancies.form.hrObservations' | t }}</mat-label>
-        <textarea matInput rows="4" formControlName="hrObservations"></textarea>
-      </mat-form-field>
-    </section>
-
-    <section class="actions">
-      <button type="button" mat-stroked-button routerLink="/app/vacancies">{{ 'common.cancel' | t }}</button>
-      <button type="submit" mat-flat-button [disabled]="vacancyForm.invalid || isSaving()">
-        {{ isEditMode() ? ('vacancies.form.updateVacancy' | t) : ('vacancies.form.createVacancy' | t) }}
-      </button>
-    </section>
+    <footer class="form-actions surface-card">
+      <p>{{ 'vacancies.form.requiredHint' | t }}</p>
+      <div>
+        <button type="button" mat-stroked-button routerLink="/app/vacancies">{{ 'common.cancel' | t }}</button>
+        <button type="submit" mat-flat-button [disabled]="vacancyForm.invalid || isSaving()">{{ isEditMode() ? ('vacancies.form.updateVacancy' | t) : ('vacancies.form.createVacancy' | t) }}</button>
+      </div>
+    </footer>
   </form>
 </section>

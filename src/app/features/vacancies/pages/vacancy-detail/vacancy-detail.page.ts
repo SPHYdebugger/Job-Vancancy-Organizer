@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,7 +13,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { VacancyEvent } from '../../../../core/models/vacancy-event.model';
-import { VacancyPriority, VacancyStatus, WorkModality } from '../../../../core/models/vacancy.model';
+import { SeniorityLevel, VacancyPriority, VacancyStatus, WorkModality } from '../../../../core/models/vacancy.model';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ConfirmationDialogComponent } from '../../../../shared/ui/confirmation-dialog/confirmation-dialog.component';
 import { modalityToTranslationKey, priorityToTranslationKey, statusToTranslationKey } from '../../../../shared/utils/label-mappers';
@@ -38,7 +38,6 @@ type EventComposerType =
   imports: [
     CommonModule,
     RouterLink,
-    DatePipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -248,6 +247,10 @@ export class VacancyDetailPageComponent {
     return this.i18nService.translate(modalityToTranslationKey(modality));
   }
 
+  protected seniorityLabel(seniority: SeniorityLevel): string {
+    return this.i18nService.translate(`seniority.${seniority}`);
+  }
+
   protected eventTypeLabel(eventType: VacancyEvent['type'] | EventComposerType): string {
     return this.i18nService.translate(`vacancies.events.type.${eventType}`);
   }
@@ -320,6 +323,11 @@ export class VacancyDetailPageComponent {
 
   protected toggleEventComposer(): void {
     this.isEventComposerExpanded.update((value) => !value);
+  }
+
+  protected startEvent(type: EventComposerType): void {
+    this.eventForm.controls.type.setValue(type);
+    this.isEventComposerExpanded.set(true);
   }
 
   protected toggleEventView(eventId: string): void {

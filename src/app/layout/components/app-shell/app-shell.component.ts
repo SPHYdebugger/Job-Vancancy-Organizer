@@ -12,9 +12,9 @@ import { AppPreloadService } from '../../../core/services/app-preload.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface NavigationItem {
-  labelKey: 'layout.nav.dashboard' | 'layout.nav.addVacancy' | 'layout.nav.appliedVacancies';
+  labelKey: 'layout.nav.dashboard' | 'layout.nav.appliedVacancies';
   route: string;
-  descriptionKey: 'layout.nav.dashboardDesc' | 'layout.nav.addVacancyDesc' | 'layout.nav.appliedVacanciesDesc';
+  descriptionKey: 'layout.nav.dashboardDesc' | 'layout.nav.appliedVacanciesDesc';
 }
 
 @Component({
@@ -57,11 +57,6 @@ export class AppShellComponent {
       descriptionKey: 'layout.nav.dashboardDesc'
     },
     {
-      labelKey: 'layout.nav.addVacancy',
-      route: '/app/vacancies/new',
-      descriptionKey: 'layout.nav.addVacancyDesc'
-    },
-    {
       labelKey: 'layout.nav.appliedVacancies',
       route: '/app/vacancies',
       descriptionKey: 'layout.nav.appliedVacanciesDesc'
@@ -82,7 +77,7 @@ export class AppShellComponent {
         }
       });
 
-    interval(1000)
+    interval(60_000)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.currentDateTime.set(this.formatCurrentDateTime(new Date()));

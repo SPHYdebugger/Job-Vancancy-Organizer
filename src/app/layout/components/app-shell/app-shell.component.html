@@ -23,6 +23,10 @@
           <span class="description">{{ item.descriptionKey | t }}</span>
         </a>
       }
+      <a class="create-action" routerLink="/app/vacancies/new" (click)="closeSidebar()">
+        <span aria-hidden="true">＋</span>
+        <span>{{ 'vacancies.list.addVacancy' | t }}</span>
+      </a>
     </nav>
 
     <div class="sidebar-footer">

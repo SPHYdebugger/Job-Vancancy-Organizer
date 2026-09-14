@@ -14,6 +14,8 @@ export interface VacancyListItemDto {
   modality: Vacancy['modality'];
   priority: Vacancy['priority'];
   applicationDate: string | null;
+  nextFollowUpDate: string | null;
+  followUpPending: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +28,7 @@ export interface DashboardVacancyDto {
   applicationStatus: Vacancy['applicationStatus'];
   modality: Vacancy['modality'];
   priority: Vacancy['priority'];
+  companyResponse: Vacancy['companyResponse'];
   createdAt: string;
   discoveredAt: string | null;
   applicationDate: string | null;

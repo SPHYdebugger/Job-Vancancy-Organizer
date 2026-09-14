@@ -63,7 +63,7 @@ export class LoginPageComponent {
     this.appPreloadService.preloadDashboardAssets();
   }
 
-  public submit(): void {
+  public async submit(): Promise<void> {
     this.submitted.set(true);
     this.errorMessage.set(null);
 
@@ -74,7 +74,7 @@ export class LoginPageComponent {
 
     this.isSubmitting.set(true);
 
-    const loginResult = this.authService.login({
+    const loginResult = await this.authService.login({
       username: this.usernameControl.value,
       password: this.passwordControl.value,
       rememberSession: this.loginForm.controls.rememberSession.value

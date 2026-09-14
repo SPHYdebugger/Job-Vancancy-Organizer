@@ -1,209 +1,110 @@
-<section class="vacancy-list-shell surface-card">
-  <header>
+<section class="vacancy-list-shell">
+  <header class="page-header">
     <div>
-      <h1>{{ 'vacancies.list.title' | t }}</h1>
-      <p>{{ 'vacancies.list.subtitle' | t }}</p>
+      <p class="eyebrow">{{ 'vacancies.list.eyebrow' | t }}</p>
+      <h1>{{ 'vacancies.list.titleOptimized' | t }}</h1>
+      <p>{{ 'vacancies.list.subtitleOptimized' | t }}</p>
     </div>
     <div class="header-actions">
-      <button type="button" mat-flat-button (click)="exportFilteredToExcel()">
-        {{ 'vacancies.list.exportExcel' | t }}
-      </button>
-      <button type="button" mat-stroked-button color="warn" (click)="softDeleteAllVacancies()">
-        {{ 'vacancies.list.deleteAll' | t }}
-      </button>
+      <button type="button" mat-stroked-button [matMenuTriggerFor]="pageMenu">{{ 'common.more' | t }}</button>
+      <a mat-flat-button routerLink="/app/vacancies/new">{{ 'vacancies.list.addVacancy' | t }}</a>
+      <mat-menu #pageMenu="matMenu">
+        <button mat-menu-item type="button" (click)="exportFilteredToExcel()">{{ 'vacancies.list.exportExcel' | t }}</button>
+        <button mat-menu-item type="button" (click)="softDeleteAllVacancies()">{{ 'vacancies.list.deleteAll' | t }}</button>
+      </mat-menu>
     </div>
   </header>
 
-  <form class="filters-grid" [formGroup]="filtersForm">
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'vacancies.list.search' | t }}</mat-label>
-      <input matInput formControlName="search" [placeholder]="'vacancies.list.searchPlaceholder' | t" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'vacancies.list.company' | t }}</mat-label>
-      <mat-select formControlName="company">
-        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
-        @for (company of companyOptions(); track company) {
-          <mat-option [value]="company">{{ company }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'vacancies.list.status' | t }}</mat-label>
-      <mat-select formControlName="status">
-        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
-        @for (status of statusOptions(); track status) {
-          <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'vacancies.list.modality' | t }}</mat-label>
-      <mat-select formControlName="modality">
-        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
-        @for (modality of modalityOptions(); track modality) {
-          <mat-option [value]="modality">{{ modalityLabel(modality) }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'vacancies.list.priority' | t }}</mat-label>
-      <mat-select formControlName="priority">
-        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
-        @for (priority of priorityOptions(); track priority) {
-          <mat-option [value]="priority">{{ priorityLabel(priority) }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'vacancies.list.stack' | t }}</mat-label>
-      <mat-select formControlName="stack">
-        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
-        @for (stack of stackOptions(); track stack) {
-          <mat-option [value]="stack">{{ stack }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'vacancies.list.headquarters' | t }}</mat-label>
-      <mat-select formControlName="headquarters">
-        <mat-option value="all">{{ 'common.all' | t }}</mat-option>
-        @for (headquarters of headquartersOptions(); track headquarters) {
-          <mat-option [value]="headquarters">{{ headquarters }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <div class="date-range">
-      <label>
-        {{ 'vacancies.list.fromDate' | t }}
-        <input type="date" formControlName="fromDate" />
-      </label>
-
-      <label>
-        {{ 'vacancies.list.toDate' | t }}
-        <input type="date" formControlName="toDate" />
-      </label>
-    </div>
-
-    @if (hasAnyVacancies()) {
-      <div class="filter-actions">
-        <button type="button" mat-stroked-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
+  <section class="filter-panel surface-card">
+    <form [formGroup]="filtersForm">
+      <div class="primary-filters">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-field">
+          <mat-label>{{ 'vacancies.list.search' | t }}</mat-label>
+          <input matInput formControlName="search" [placeholder]="'vacancies.list.searchPlaceholder' | t" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'vacancies.list.status' | t }}</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="all">{{ 'common.all' | t }}</mat-option>
+            @for (status of statusOptions(); track status) { <mat-option [value]="status">{{ statusLabel(status) }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
       </div>
-    }
-  </form>
+
+      <div class="quick-views" role="group" [attr.aria-label]="'vacancies.list.quickViews' | t">
+        @for (view of quickViews; track view) {
+          <button type="button" [class.active]="isQuickViewActive(view)" (click)="setQuickView(view)">
+            {{ ('vacancies.list.view.' + view) | t }}
+          </button>
+        }
+      </div>
+
+      <details class="advanced-filters">
+        <summary>
+          {{ 'vacancies.list.advancedFilters' | t }}
+          @if (advancedFilterCount() > 0) { <span>{{ advancedFilterCount() }}</span> }
+        </summary>
+        <div class="advanced-grid">
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.list.modality' | t }}</mat-label><mat-select formControlName="modality"><mat-option value="all">{{ 'common.all' | t }}</mat-option>@for (modality of modalityOptions(); track modality) { <mat-option [value]="modality">{{ modalityLabel(modality) }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.list.priority' | t }}</mat-label><mat-select formControlName="priority"><mat-option value="all">{{ 'common.all' | t }}</mat-option>@for (priority of priorityOptions(); track priority) { <mat-option [value]="priority">{{ priorityLabel(priority) }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.list.stack' | t }}</mat-label><mat-select formControlName="stack"><mat-option value="all">{{ 'common.all' | t }}</mat-option>@for (stack of stackOptions(); track stack) { <mat-option [value]="stack">{{ stack }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'vacancies.list.location' | t }}</mat-label><mat-select formControlName="headquarters"><mat-option value="all">{{ 'common.all' | t }}</mat-option>@for (headquarters of headquartersOptions(); track headquarters) { <mat-option [value]="headquarters">{{ headquarters }}</mat-option> }</mat-select></mat-form-field>
+          <label class="date-field"><span>{{ 'vacancies.list.fromDate' | t }}</span><input type="date" formControlName="fromDate" /></label>
+          <label class="date-field"><span>{{ 'vacancies.list.toDate' | t }}</span><input type="date" formControlName="toDate" /></label>
+        </div>
+      </details>
+
+      <div class="filter-footer">
+        <p><strong>{{ filteredCount() }}</strong> {{ 'common.of' | t }} {{ totalVacancies() }} {{ 'vacancies.list.vacancies' | t }}</p>
+        <button type="button" mat-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
+      </div>
+    </form>
+  </section>
 
   @if (paginatedVacancies().length > 0) {
-    <section class="table-shell">
-      <header class="table-header">
-        <p class="total">
-          {{ 'vacancies.list.showing' | t }}
-          <strong>{{ filteredCount() }}</strong>
-          {{ 'common.of' | t }}
-          <strong>{{ totalVacancies() }}</strong>
-          {{ 'vacancies.list.vacancies' | t }}.
-        </p>
-
+    <section class="table-shell surface-card">
+      <div class="table-toolbar">
+        <p>{{ 'vacancies.list.resultsTitle' | t }}</p>
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="page-size-field">
           <mat-label>{{ 'common.resultsPerPage' | t }}</mat-label>
           <mat-select [value]="pageSize()" (selectionChange)="setPageSize($event.value)">
-            @for (option of pageSizeOptions; track option) {
-              <mat-option [value]="option">{{ option }}</mat-option>
-            }
+            @for (option of pageSizeOptions; track option) { <mat-option [value]="option">{{ option }}</mat-option> }
           </mat-select>
         </mat-form-field>
-      </header>
-
+      </div>
       <div class="table-scroll">
         <table class="vacancies-table">
-          <thead>
-            <tr>
-              <th>
-                <button type="button" class="sort-trigger" (click)="toggleColumnSort('company')">
-                  {{ 'vacancies.list.company' | t }}
-                  <span class="sort-indicator" [class.active]="getColumnSortDirection('company')">
-                    {{ getColumnSortDirection('company') === 'asc' ? '↑' : getColumnSortDirection('company') ===
-                    'desc' ? '↓' : '↕' }}
-                  </span>
-                </button>
-              </th>
-              <th>
-                <button type="button" class="sort-trigger" (click)="toggleColumnSort('position')">
-                  {{ 'vacancies.list.position' | t }}
-                  <span class="sort-indicator" [class.active]="getColumnSortDirection('position')">
-                    {{ getColumnSortDirection('position') === 'asc' ? '↑' : getColumnSortDirection('position') ===
-                    'desc' ? '↓' : '↕' }}
-                  </span>
-                </button>
-              </th>
-              <th>
-                <button type="button" class="sort-trigger" (click)="toggleColumnSort('status')">
-                  {{ 'vacancies.list.status' | t }}
-                  <span class="sort-indicator" [class.active]="getColumnSortDirection('status')">
-                    {{ getColumnSortDirection('status') === 'asc' ? '↑' : getColumnSortDirection('status') ===
-                    'desc' ? '↓' : '↕' }}
-                  </span>
-                </button>
-              </th>
-              <th>
-                <button type="button" class="sort-trigger" (click)="toggleColumnSort('modality')">
-                  {{ 'vacancies.list.modality' | t }}
-                  <span class="sort-indicator" [class.active]="getColumnSortDirection('modality')">
-                    {{ getColumnSortDirection('modality') === 'asc' ? '↑' : getColumnSortDirection('modality') ===
-                    'desc' ? '↓' : '↕' }}
-                  </span>
-                </button>
-              </th>
-              <th>
-                <button type="button" class="sort-trigger" (click)="toggleColumnSort('application')">
-                  {{ 'vacancies.list.applicationDate' | t }}
-                  <span class="sort-indicator" [class.active]="getColumnSortDirection('application')">
-                    {{ getColumnSortDirection('application') === 'asc' ? '↑' : getColumnSortDirection('application')
-                    === 'desc' ? '↓' : '↕' }}
-                  </span>
-                </button>
-              </th>
-              <th>
-                <button type="button" class="sort-trigger" (click)="toggleColumnSort('priority')">
-                  {{ 'vacancies.list.priority' | t }}
-                  <span class="sort-indicator" [class.active]="getColumnSortDirection('priority')">
-                    {{ getColumnSortDirection('priority') === 'asc' ? '↑' : getColumnSortDirection('priority') ===
-                    'desc' ? '↓' : '↕' }}
-                  </span>
-                </button>
-              </th>
-              <th>
-                <button type="button" class="sort-trigger" (click)="toggleColumnSort('updated')">
-                  {{ 'vacancies.list.lastUpdate' | t }}
-                  <span class="sort-indicator" [class.active]="getColumnSortDirection('updated')">
-                    {{ getColumnSortDirection('updated') === 'asc' ? '↑' : getColumnSortDirection('updated') ===
-                    'desc' ? '↓' : '↕' }}
-                  </span>
-                </button>
-              </th>
-              <th class="actions-column">{{ 'vacancies.list.actions' | t }}</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th><button type="button" class="sort-trigger" (click)="toggleColumnSort('company')">{{ 'vacancies.list.opportunity' | t }} <span>{{ getColumnSortDirection('company') === 'asc' ? '↑' : getColumnSortDirection('company') === 'desc' ? '↓' : '↕' }}</span></button></th>
+            <th><button type="button" class="sort-trigger" (click)="toggleColumnSort('status')">{{ 'vacancies.list.status' | t }} <span>{{ getColumnSortDirection('status') === 'asc' ? '↑' : getColumnSortDirection('status') === 'desc' ? '↓' : '↕' }}</span></button></th>
+            <th>{{ 'vacancies.list.nextAction' | t }}</th>
+            <th><button type="button" class="sort-trigger" (click)="toggleColumnSort('application')">{{ 'vacancies.list.applicationDate' | t }} <span>{{ getColumnSortDirection('application') === 'asc' ? '↑' : getColumnSortDirection('application') === 'desc' ? '↓' : '↕' }}</span></button></th>
+            <th><button type="button" class="sort-trigger" (click)="toggleColumnSort('priority')">{{ 'vacancies.list.priority' | t }} <span>{{ getColumnSortDirection('priority') === 'asc' ? '↑' : getColumnSortDirection('priority') === 'desc' ? '↓' : '↕' }}</span></button></th>
+            <th class="actions-column">{{ 'vacancies.list.actions' | t }}</th>
+          </tr></thead>
           <tbody>
             @for (vacancy of paginatedVacancies(); track trackById($index, vacancy)) {
               <tr>
-                <td class="company-cell">{{ vacancy.company }}</td>
-                <td>{{ vacancy.position }}</td>
-                <td><span class="chip status">{{ statusLabel(vacancy.applicationStatus) }}</span></td>
-                <td>{{ modalityLabel(vacancy.modality) }}</td>
-                <td>{{ (vacancy.applicationDate || vacancy.createdAt) | date: 'MMM d, y' : '' : locale() }}</td>
-                <td><span class="chip priority">{{ priorityLabel(vacancy.priority) }}</span></td>
-                <td>{{ vacancy.updatedAt | date: 'MMM d, y' : '' : locale() }}</td>
+                <td [attr.data-label]="'vacancies.list.opportunity' | t">
+                  <a class="opportunity-link" [routerLink]="['/app/vacancies', vacancy.id]">
+                    <strong>{{ vacancy.company }}</strong><span>{{ vacancy.position }}</span>
+                  </a>
+                </td>
+                <td [attr.data-label]="'vacancies.list.status' | t"><span class="chip status">{{ statusLabel(vacancy.applicationStatus) }}</span></td>
+                <td [attr.data-label]="'vacancies.list.nextAction' | t">
+                  @if (vacancy.nextFollowUpDate) {
+                    <span class="follow-up" [class.overdue]="isFollowUpOverdue(vacancy)">{{ vacancy.nextFollowUpDate | date: 'MMM d, y' : '' : locale() }}</span>
+                  } @else { <span class="muted">{{ 'vacancies.list.noAction' | t }}</span> }
+                </td>
+                <td [attr.data-label]="'vacancies.list.applicationDate' | t">{{ (vacancy.applicationDate || vacancy.createdAt) | date: 'MMM d, y' : '' : locale() }}</td>
+                <td [attr.data-label]="'vacancies.list.priority' | t"><span class="chip priority">{{ priorityLabel(vacancy.priority) }}</span></td>
                 <td class="actions-cell">
-                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id]">{{ 'common.view' | t }}</a>
-                  <a mat-button [routerLink]="['/app/vacancies', vacancy.id, 'edit']">{{ 'common.edit' | t }}</a>
-                  <button type="button" mat-button (click)="deleteVacancy(vacancy)">{{ 'common.delete' | t }}</button>
+                  <button type="button" class="row-menu-trigger" [matMenuTriggerFor]="rowMenu" [attr.aria-label]="'vacancies.list.rowActions' | t">•••</button>
+                  <mat-menu #rowMenu="matMenu">
+                    <a mat-menu-item [routerLink]="['/app/vacancies', vacancy.id]">{{ 'common.view' | t }}</a>
+                    <a mat-menu-item [routerLink]="['/app/vacancies', vacancy.id, 'edit']">{{ 'common.edit' | t }}</a>
+                    <button mat-menu-item type="button" (click)="deleteVacancy(vacancy)">{{ 'common.delete' | t }}</button>
+                  </mat-menu>
                 </td>
               </tr>
             }
@@ -211,25 +112,18 @@
         </table>
       </div>
     </section>
-
     <footer class="pagination">
-      <button type="button" mat-stroked-button (click)="previousPage()" [disabled]="currentPage() === 0">
-        {{ 'common.previous' | t }}
-      </button>
+      <button type="button" mat-stroked-button (click)="previousPage()" [disabled]="currentPage() === 0">{{ 'common.previous' | t }}</button>
       <p>{{ 'common.page' | t }} {{ pageDisplay() }}</p>
-      <button type="button" mat-stroked-button (click)="nextPage()" [disabled]="currentPage() >= totalPages() - 1">
-        {{ 'common.next' | t }}
-      </button>
+      <button type="button" mat-stroked-button (click)="nextPage()" [disabled]="currentPage() >= totalPages() - 1">{{ 'common.next' | t }}</button>
     </footer>
   } @else {
     <section class="empty-state surface-card">
-      @if (!hasAnyVacancies()) {
-        <h2 style="color: red;">{{ 'vacancies.list.noDataTitle' | t }}</h2>
-      } @else {
-        <h2>{{ 'vacancies.list.emptyTitle' | t }}</h2>
-        <p>{{ 'vacancies.list.emptyDescription' | t }}</p>
-        <button type="button" mat-flat-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button>
-      }
+      <span class="empty-icon">◎</span>
+      <h2>{{ hasAnyVacancies() ? ('vacancies.list.emptyTitle' | t) : ('vacancies.list.noDataTitle' | t) }}</h2>
+      <p>{{ hasAnyVacancies() ? ('vacancies.list.emptyDescriptionOptimized' | t) : ('vacancies.list.noDataDescription' | t) }}</p>
+      @if (hasAnyVacancies()) { <button type="button" mat-flat-button (click)="clearFilters()">{{ 'vacancies.list.resetFilters' | t }}</button> }
+      @else { <a mat-flat-button routerLink="/app/vacancies/new">{{ 'vacancies.list.addFirst' | t }}</a> }
     </section>
   }
 </section>

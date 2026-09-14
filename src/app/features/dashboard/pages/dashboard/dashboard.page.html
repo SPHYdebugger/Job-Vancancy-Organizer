@@ -1,310 +1,79 @@
 <section class="dashboard">
-  <section class="kpi-grid" aria-label="Key metrics">
+  <header class="dashboard-header">
+    <div><p class="eyebrow">{{ 'dashboard.eyebrow' | t }}</p><h1>{{ 'dashboard.title' | t }}</h1><p>{{ 'dashboard.subtitle' | t }}</p></div>
+    <a mat-flat-button routerLink="/app/vacancies/new">{{ 'vacancies.list.addVacancy' | t }}</a>
+  </header>
+
+  <section class="kpi-grid" [attr.aria-label]="'dashboard.kpi.aria' | t">
     @for (metric of kpiMetrics(); track metric.id) {
       <article class="kpi-card surface-card">
         <p class="metric-label">{{ metricLabel(metric.id) }}</p>
-        <p class="metric-value">{{ metric.value }}</p>
-        <p class="metric-trend" [ngClass]="metricTrendClass(metric)">
-          {{ metricTrendLabel(metric.id) }}
-        </p>
+        <p class="metric-value">{{ metric.value }}{{ metric.suffix || '' }}</p>
+        <p class="metric-trend" [ngClass]="metricTrendClass(metric)">{{ metricTrendLabel(metric.id) }}</p>
       </article>
     }
   </section>
 
   <section class="dashboard-main">
-    <article class="panel panel-wide surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.applicationsEvolutionTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.applicationsEvolutionSubtitle' | t }}</p>
-        </div>
-      </div>
+    <article class="panel panel-seven surface-card">
+      <div class="panel-header"><div><h2>{{ 'dashboard.section.applicationsEvolutionTitle' | t }}</h2><p>{{ 'dashboard.section.applicationsEvolutionSubtitle' | t }}</p></div></div>
       <div class="chart-host">
         @if (hasData()) {
-          <apx-chart
-            [series]="applicationsChart().series"
-            [chart]="applicationsChart().chart"
-            [xaxis]="applicationsChart().xaxis"
-            [yaxis]="applicationsChart().yaxis"
-            [stroke]="applicationsChart().stroke"
-            [grid]="applicationsChart().grid"
-            [fill]="applicationsChart().fill"
-            [dataLabels]="applicationsChart().dataLabels"
-            [tooltip]="applicationsChart().tooltip"
-            [colors]="applicationsChart().colors">
-          </apx-chart>
-        } @else {
-          <p class="no-data-state">{{ 'dashboard.noDataYet' | t }}</p>
-        }
-        @if (hasData() && isChartLoading('applications')) {
-          <div class="chart-loader-overlay">
-            <span class="chart-spinner" aria-hidden="true"></span>
-          </div>
-        }
+          <apx-chart [series]="applicationsChart().series" [chart]="applicationsChart().chart" [xaxis]="applicationsChart().xaxis" [yaxis]="applicationsChart().yaxis" [stroke]="applicationsChart().stroke" [grid]="applicationsChart().grid" [fill]="applicationsChart().fill" [dataLabels]="applicationsChart().dataLabels" [tooltip]="applicationsChart().tooltip" [colors]="applicationsChart().colors" />
+        } @else { <p class="no-data-state">{{ 'dashboard.noDataYet' | t }}</p> }
+        @if (hasData() && isChartLoading('applications')) { <div class="chart-loader-overlay"><span class="chart-spinner"></span></div> }
       </div>
     </article>
 
-    <article class="panel surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.statusDistributionTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.statusDistributionSubtitle' | t }}</p>
-        </div>
-      </div>
+    <article class="panel panel-five surface-card">
+      <div class="panel-header"><div><h2>{{ 'dashboard.section.pipelineTitle' | t }}</h2><p>{{ 'dashboard.section.pipelineSubtitle' | t }}</p></div></div>
       <div class="chart-host">
         @if (hasData()) {
-          <apx-chart
-            [series]="statusChart().series"
-            [chart]="statusChart().chart"
-            [labels]="statusChart().labels"
-            [legend]="statusChart().legend"
-            [plotOptions]="statusChart().plotOptions"
-            [dataLabels]="statusChart().dataLabels"
-            [stroke]="statusChart().stroke"
-            [tooltip]="statusChart().tooltip"
-            [colors]="statusChart().colors"
-            [responsive]="statusChart().responsive">
-          </apx-chart>
-        } @else {
-          <p class="no-data-state">{{ 'dashboard.noDataYet' | t }}</p>
-        }
-        @if (hasData() && isChartLoading('status')) {
-          <div class="chart-loader-overlay">
-            <span class="chart-spinner" aria-hidden="true"></span>
-          </div>
-        }
+          <apx-chart [series]="statusChart().series" [chart]="statusChart().chart" [labels]="statusChart().labels" [legend]="statusChart().legend" [plotOptions]="statusChart().plotOptions" [dataLabels]="statusChart().dataLabels" [stroke]="statusChart().stroke" [tooltip]="statusChart().tooltip" [colors]="statusChart().colors" [responsive]="statusChart().responsive" />
+        } @else { <p class="no-data-state">{{ 'dashboard.noDataYet' | t }}</p> }
+        @if (hasData() && isChartLoading('status')) { <div class="chart-loader-overlay"><span class="chart-spinner"></span></div> }
       </div>
     </article>
 
-    <article class="panel surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.workModalityTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.workModalitySubtitle' | t }}</p>
-        </div>
-      </div>
-      <div class="chart-host">
-        @if (hasData()) {
-          <apx-chart
-            [series]="modalityChart().series"
-            [chart]="modalityChart().chart"
-            [labels]="modalityChart().labels"
-            [legend]="modalityChart().legend"
-            [plotOptions]="modalityChart().plotOptions"
-            [dataLabels]="modalityChart().dataLabels"
-            [stroke]="modalityChart().stroke"
-            [tooltip]="modalityChart().tooltip"
-            [colors]="modalityChart().colors"
-            [responsive]="modalityChart().responsive">
-          </apx-chart>
-        } @else {
-          <p class="no-data-state">{{ 'dashboard.noDataYet' | t }}</p>
-        }
-        @if (hasData() && isChartLoading('modality')) {
-          <div class="chart-loader-overlay">
-            <span class="chart-spinner" aria-hidden="true"></span>
-          </div>
-        }
-      </div>
-    </article>
-
-    <article class="panel panel-wide surface-card">
-      <div class="panel-header">
-        <div>
-          <h3>{{ 'dashboard.section.stackDemandTitle' | t }}</h3>
-          <p>{{ 'dashboard.section.stackDemandSubtitle' | t }}</p>
-        </div>
-      </div>
-      <div class="chart-host">
-        @if (hasData()) {
-          <apx-chart
-            [series]="stackChart().series"
-            [chart]="stackChart().chart"
-            [plotOptions]="stackChart().plotOptions"
-            [dataLabels]="stackChart().dataLabels"
-            [grid]="stackChart().grid"
-            [xaxis]="stackChart().xaxis"
-            [yaxis]="stackChart().yaxis"
-            [tooltip]="stackChart().tooltip"
-            [colors]="stackChart().colors">
-          </apx-chart>
-        } @else {
-          <p class="no-data-state">{{ 'dashboard.noDataYet' | t }}</p>
-        }
-        @if (hasData() && isChartLoading('stack')) {
-          <div class="chart-loader-overlay">
-            <span class="chart-spinner" aria-hidden="true"></span>
-          </div>
-        }
-      </div>
-    </article>
-
-      <article class="panel panel-quarter surface-card">
-        <div class="panel-header">
-          <div>
-            <h3>{{ 'dashboard.section.recentActivityTitle' | t }}</h3>
-            <p>{{ 'dashboard.section.recentActivitySubtitle' | t }}</p>
-          </div>
-        </div>
-
-        <ul class="activity-list">
-          @if (analytics().recentActivity.length === 0) {
+    <article class="panel panel-seven surface-card action-center">
+      <div class="panel-header"><div><h2>{{ 'dashboard.section.actionCenterTitle' | t }}</h2><p>{{ 'dashboard.section.actionCenterSubtitle' | t }}</p></div><a routerLink="/app/vacancies">{{ 'dashboard.viewAll' | t }}</a></div>
+      <ul class="action-list">
+        @if (!hasFollowUpData() || globalFollowUps().length === 0) { <li class="empty-row">{{ 'dashboard.noPendingActions' | t }}</li> }
+        @else {
+          @for (followUp of globalFollowUps(); track followUp.id) {
             <li>
-              <p class="activity-detail no-data-inline">{{ 'dashboard.noDataYet' | t }}</p>
-            </li>
-          } @else {
-            @for (activity of analytics().recentActivity; track activity.id) {
-              <li>
-                <p class="activity-title">{{ activity.title }}</p>
-                <p class="activity-detail">{{ activity.detail }}</p>
-                <p class="activity-time">{{ activity.occurredAt | date: 'MMM d, y · HH:mm' : '' : locale() }}</p>
-              </li>
-            }
-          }
-        </ul>
-      </article>
-
-      <article class="panel panel-quarter surface-card">
-        <div class="panel-header">
-          <div>
-            <h3>{{ 'dashboard.section.upcomingActionsTitle' | t }}</h3>
-            <p>{{ 'dashboard.section.upcomingActionsSubtitle' | t }}</p>
-          </div>
-        </div>
-
-        <ul class="actions-list">
-          @if (nextActions().length === 0) {
-            <li>
-              <p class="action-company no-data-inline">{{ 'dashboard.noDataYet' | t }}</p>
-            </li>
-          } @else {
-            @for (action of nextActions(); track action.id) {
-              <li>
-                <div>
-                  <p class="action-title">{{ action.title }}</p>
-                  <p class="action-company">{{ action.company }}</p>
-                </div>
-                <div class="action-meta">
-                  <span class="chip" [ngClass]="priorityClass(action.priority)">{{ priorityLabel(action.priority) }}</span>
-                  <span class="due-date">{{ action.dueDate | date: 'MMM d' : '' : locale() }}</span>
-                </div>
-              </li>
-            }
-          }
-        </ul>
-      </article>
-
-      <article class="panel panel-quarter surface-card">
-        <div class="panel-header">
-          <div>
-            <h3>{{ 'dashboard.section.followUpsQueueTitle' | t }}</h3>
-            <p>{{ 'dashboard.section.followUpsQueueSubtitle' | t }}</p>
-          </div>
-        </div>
-
-        <ul class="followups-list">
-          @if (!hasFollowUpData() || globalFollowUps().length === 0) {
-            <li>
-              <p class="followup-meta no-data-inline">{{ 'dashboard.noDataYet' | t }}</p>
-            </li>
-          } @else {
-            @for (followUp of globalFollowUps(); track followUp.id) {
-              <li>
-                <div>
-                  <p class="followup-subject">{{ followUp.subject }}</p>
-                  <p class="followup-meta">{{ followUp.company }} · {{ followUp.position }}</p>
-                  <p class="followup-date">{{ followUp.plannedDate | date: 'MMM d, y · HH:mm' : '' : locale() }}</p>
-                </div>
-                <div class="followup-actions">
-                  <span class="chip" [ngClass]="followUpStatusClass(followUp.status, followUp.overdue)">
-                    {{ followUp.overdue ? ('dashboard.followups.overdue' | t) : followUpStatusLabel(followUp.status) }}
-                  </span>
-                  @if (followUp.status === 'completed') {
-                    <button mat-stroked-button type="button" (click)="reopenFollowUp(followUp.id)">
-                      {{ 'dashboard.followups.reopen' | t }}
-                    </button>
-                  } @else {
-                    <button mat-stroked-button type="button" (click)="markFollowUpCompleted(followUp.id)">
-                      {{ 'dashboard.followups.complete' | t }}
-                    </button>
-                  }
-                  <a mat-stroked-button [routerLink]="['/app/vacancies', followUp.vacancyId]">
-                    {{ 'common.view' | t }}
-                  </a>
-                </div>
-              </li>
-            }
-          }
-        </ul>
-      </article>
-
-      <article class="panel panel-quarter surface-card">
-        <div class="panel-header">
-          <div>
-            <h3>{{ 'dashboard.section.topCompanyInteractionsTitle' | t }}</h3>
-            <p>{{ 'dashboard.section.topCompanyInteractionsSubtitle' | t }}</p>
-          </div>
-        </div>
-
-        <ul class="companies-list">
-          @if (topCompanies().length === 0) {
-            <li>
-              <p class="company-meta no-data-inline">{{ 'dashboard.noDataYet' | t }}</p>
-            </li>
-          } @else {
-            @for (company of topCompanies(); track company.company) {
-              <li>
-                <div>
-                  <p class="company-name">{{ company.company }}</p>
-                  <p class="company-meta">
-                    {{ statusLabel(company.currentStatus) }} · {{ 'dashboard.lastContact' | t }}
-                    {{ company.lastContactAt | date: 'MMM d' : '' : locale() }}
-                  </p>
-                </div>
-                <span class="touches">{{ company.touches }} {{ 'dashboard.touches' | t }}</span>
-              </li>
-            }
-          }
-        </ul>
-      </article>
-
-      <article class="panel panel-full surface-card">
-        <div class="panel-header">
-          <div>
-            <h3>{{ 'dashboard.section.recentVacanciesTitle' | t }}</h3>
-            <p>{{ 'dashboard.section.recentVacanciesSubtitle' | t }}</p>
-          </div>
-        </div>
-
-          <div class="table-like" role="table" [attr.aria-label]="'dashboard.table.recentVacanciesAria' | t">
-            <div class="table-head" role="row">
-              <span>{{ 'dashboard.table.company' | t }}</span>
-              <span>{{ 'dashboard.table.role' | t }}</span>
-              <span>{{ 'dashboard.table.status' | t }}</span>
-              <span>{{ 'dashboard.table.priority' | t }}</span>
-              <span>{{ 'dashboard.table.updated' | t }}</span>
-            </div>
-
-            @if (recentVacancies().length === 0) {
-              <div class="table-row" role="row">
-                <span class="no-data-inline">{{ 'dashboard.noDataYet' | t }}</span>
-                <span>{{ 'common.notAvailable' | t }}</span>
-                <span>{{ 'common.notAvailable' | t }}</span>
-                <span>{{ 'common.notAvailable' | t }}</span>
-                <span>{{ 'common.notAvailable' | t }}</span>
+              <div class="action-date"><strong>{{ followUp.plannedDate | date: 'dd' : '' : locale() }}</strong><span>{{ followUp.plannedDate | date: 'MMM' : '' : locale() }}</span></div>
+              <div class="action-copy"><strong>{{ followUp.company }}</strong><span>{{ followUp.subject }}</span><small>{{ followUp.position }}</small></div>
+              <span class="chip" [ngClass]="followUpStatusClass(followUp.status, followUp.overdue)">{{ followUp.overdue ? ('dashboard.followups.overdue' | t) : followUpStatusLabel(followUp.status) }}</span>
+              <div class="action-buttons">
+                @if (followUp.status === 'completed') { <button mat-button type="button" (click)="reopenFollowUp(followUp.id)">{{ 'dashboard.followups.reopen' | t }}</button> }
+                @else { <button mat-button type="button" (click)="markFollowUpCompleted(followUp.id)">{{ 'dashboard.followups.complete' | t }}</button> }
+                <a mat-button [routerLink]="['/app/vacancies', followUp.vacancyId]">{{ 'common.view' | t }}</a>
               </div>
-            } @else {
-              @for (vacancy of recentVacancies(); track vacancy.id) {
-                <div class="table-row" role="row">
-                  <span>{{ vacancy.company }}</span>
-                  <span>{{ vacancy.role }}</span>
-                  <span class="chip" [ngClass]="statusClass(vacancy.status)">{{ statusLabel(vacancy.status) }}</span>
-                  <span class="chip" [ngClass]="priorityClass(vacancy.priority)">{{ priorityLabel(vacancy.priority) }}</span>
-                  <span>{{ vacancy.updatedAt | date: 'MMM d, HH:mm' : '' : locale() }}</span>
-                </div>
-              }
-            }
-          </div>
-      </article>
+            </li>
+          }
+        }
+      </ul>
+    </article>
+
+    <article class="panel panel-five surface-card activity-panel">
+      <div class="panel-header"><div><h2>{{ 'dashboard.section.recentActivityTitle' | t }}</h2><p>{{ 'dashboard.section.recentActivitySubtitle' | t }}</p></div></div>
+      <ul class="activity-list">
+        @if (analytics().recentActivity.length === 0) { <li class="empty-row">{{ 'dashboard.noDataYet' | t }}</li> }
+        @else {
+          @for (activity of analytics().recentActivity; track activity.id) {
+            <li><span class="activity-dot"></span><div><strong>{{ activity.title }}</strong><p>{{ activity.detail }}</p><small>{{ activity.occurredAt | date: 'MMM d, HH:mm' : '' : locale() }}</small></div></li>
+          }
+        }
+      </ul>
+    </article>
+
+    <details class="market-insights surface-card">
+      <summary><div><strong>{{ 'dashboard.section.marketInsightsTitle' | t }}</strong><span>{{ 'dashboard.section.marketInsightsSubtitle' | t }}</span></div></summary>
+      <div class="market-grid">
+        <article class="insight-panel"><h2>{{ 'dashboard.section.workModalityTitle' | t }}</h2><div class="chart-host compact-chart">@if (hasData()) { <apx-chart [series]="modalityChart().series" [chart]="modalityChart().chart" [labels]="modalityChart().labels" [legend]="modalityChart().legend" [plotOptions]="modalityChart().plotOptions" [dataLabels]="modalityChart().dataLabels" [stroke]="modalityChart().stroke" [tooltip]="modalityChart().tooltip" [colors]="modalityChart().colors" [responsive]="modalityChart().responsive" /> }</div></article>
+        <article class="insight-panel"><h2>{{ 'dashboard.section.stackDemandTitle' | t }}</h2><div class="chart-host compact-chart">@if (hasData()) { <apx-chart [series]="stackChart().series" [chart]="stackChart().chart" [plotOptions]="stackChart().plotOptions" [dataLabels]="stackChart().dataLabels" [grid]="stackChart().grid" [xaxis]="stackChart().xaxis" [yaxis]="stackChart().yaxis" [tooltip]="stackChart().tooltip" [colors]="stackChart().colors" /> }</div></article>
+      </div>
+    </details>
   </section>
 </section>

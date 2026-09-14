@@ -56,7 +56,7 @@ describe('LocalVacancyRepository', () => {
     tags: ['fake']
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     sessionStorage.clear();
 
@@ -65,7 +65,7 @@ describe('LocalVacancyRepository', () => {
     });
 
     authService = TestBed.inject(AuthService);
-    authService.login({
+    await authService.login({
       username: environment.auth.demoUser.username,
       password: environment.auth.demoUser.password
     });

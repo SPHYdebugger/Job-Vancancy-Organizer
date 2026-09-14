@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import * as XLSX from 'xlsx';
+import type { WorkBook } from 'xlsx';
 
 import { VacancyEvent } from '../../../core/models/vacancy-event.model';
 import { VacancyFollowUp } from '../../../core/models/vacancy-followup.model';
@@ -19,11 +19,14 @@ export interface ParsedExcelResult {
   providedIn: 'root'
 })
 export class VacancyExcelImportService {
+  private xlsx!: typeof import('xlsx');
+
   constructor(private readonly vacancyMapperService: VacancyMapperService) {}
 
   public async importFromFile(file: File): Promise<ParsedExcelResult> {
+    this.xlsx = await import('xlsx');
     const workbookBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(workbookBuffer, { type: 'array' });
+    const workbook = this.xlsx.read(workbookBuffer, { type: 'array' });
     const vacanciesSheetName =
       workbook.SheetNames.find((name) => name.trim().toLowerCase() === 'vacancies') ?? workbook.SheetNames[0];
 
@@ -32,7 +35,7 @@ export class VacancyExcelImportService {
     }
 
     const vacanciesSheet = workbook.Sheets[vacanciesSheetName];
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(vacanciesSheet, {
+    const rawRows = this.xlsx.utils.sheet_to_json<Record<string, unknown>>(vacanciesSheet, {
       defval: ''
     });
 
@@ -111,14 +114,14 @@ export class VacancyExcelImportService {
     return ['id', 'company', 'position', 'applicationStatus', 'createdAt'].some((key) => key in row);
   }
 
-  private parseEventsSheet(workbook: XLSX.WorkBook, vacancyIds: Set<string>): VacancyEvent[] {
+  private parseEventsSheet(workbook: WorkBook, vacancyIds: Set<string>): VacancyEvent[] {
     const eventsSheetName = workbook.SheetNames.find((name) => name.trim().toLowerCase() === 'events');
     if (!eventsSheetName) {
       return [];
     }
 
     const eventsSheet = workbook.Sheets[eventsSheetName];
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(eventsSheet, { defval: '' });
+    const rawRows = this.xlsx.utils.sheet_to_json<Record<string, unknown>>(eventsSheet, { defval: '' });
     const now = new Date().toISOString();
 
     return rawRows
@@ -150,14 +153,14 @@ export class VacancyExcelImportService {
       .filter((event): event is VacancyEvent => Boolean(event));
   }
 
-  private parseFollowUpsSheet(workbook: XLSX.WorkBook, vacancyIds: Set<string>): VacancyFollowUp[] {
+  private parseFollowUpsSheet(workbook: WorkBook, vacancyIds: Set<string>): VacancyFollowUp[] {
     const followUpsSheetName = workbook.SheetNames.find((name) => name.trim().toLowerCase() === 'followups');
     if (!followUpsSheetName) {
       return [];
     }
 
     const followUpsSheet = workbook.Sheets[followUpsSheetName];
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(followUpsSheet, { defval: '' });
+    const rawRows = this.xlsx.utils.sheet_to_json<Record<string, unknown>>(followUpsSheet, { defval: '' });
     const now = new Date().toISOString();
 
     return rawRows

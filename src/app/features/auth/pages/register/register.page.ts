@@ -59,7 +59,7 @@ export class RegisterPageComponent {
   protected readonly passwordControl = this.registerForm.controls.password;
   protected readonly confirmPasswordControl = this.registerForm.controls.confirmPassword;
 
-  protected submit(): void {
+  protected async submit(): Promise<void> {
     this.submitted.set(true);
     this.errorMessage.set(null);
 
@@ -71,7 +71,7 @@ export class RegisterPageComponent {
     this.isSubmitting.set(true);
     const formValue = this.registerForm.getRawValue();
 
-    const registerResult = this.authService.register({
+    const registerResult = await this.authService.register({
       name: formValue.name,
       email: formValue.email,
       password: formValue.password

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -163,6 +164,15 @@ export class VacancyFormPageComponent {
     hrObservations: [''],
     tags: ['']
   });
+  protected readonly selectedStatus = toSignal(this.vacancyForm.controls.status.valueChanges, {
+    initialValue: this.vacancyForm.controls.status.value
+  });
+  protected readonly followUpEnabled = toSignal(this.vacancyForm.controls.followUpPending.valueChanges, {
+    initialValue: this.vacancyForm.controls.followUpPending.value
+  });
+  protected readonly isClosedStatus = computed(() =>
+    ['rejected', 'withdrawn', 'hired', 'archived'].includes(this.selectedStatus())
+  );
 
   constructor() {
     if (this.editingVacancy) {
@@ -173,6 +183,8 @@ export class VacancyFormPageComponent {
     if (this.authService.isDemoSession()) {
       this.openDemoRestrictionDialog();
     }
+
+    this.vacancyForm.controls.applicationDate.setValue(this.toLocalDateTimeInput(new Date().toISOString()));
   }
 
   protected openExcelImport(): void {
@@ -294,7 +306,9 @@ export class VacancyFormPageComponent {
     const contactDateIso = this.toIsoDateTime(formValue.contactDate);
     const applicationDateIso = this.toIsoDateTime(formValue.applicationDate);
     const lastStatusChangeAtIso = this.toIsoDateTime(formValue.lastStatusChangeAt);
-    const nextFollowUpDateIso = this.toIsoDateTime(formValue.nextFollowUpDate);
+    const nextFollowUpDateIso = formValue.followUpPending
+      ? this.toIsoDateTime(formValue.nextFollowUpDate)
+      : null;
 
     const currentEditingVacancy = this.editingVacancyId
       ? this.vacancyService.getById(this.editingVacancyId)
@@ -306,7 +320,7 @@ export class VacancyFormPageComponent {
         position: formValue.position,
         domain: formValue.domain || null,
         location: formValue.location || null,
-        headquarters: formValue.headquarters || null,
+        headquarters: formValue.location || null,
         modality: formValue.modality,
         employmentType: formValue.employmentType,
         seniority: formValue.seniority,
@@ -363,7 +377,7 @@ export class VacancyFormPageComponent {
       position: formValue.position,
       domain: formValue.domain || null,
       location: formValue.location || null,
-      headquarters: formValue.headquarters || null,
+      headquarters: formValue.location || null,
       modality: formValue.modality,
       employmentType: formValue.employmentType,
       seniority: formValue.seniority,
@@ -416,6 +430,18 @@ export class VacancyFormPageComponent {
 
   protected responseLabel(response: CompanyResponseState): string {
     return this.i18nService.translate(responseToTranslationKey(response));
+  }
+
+  protected employmentTypeLabel(type: EmploymentType): string {
+    return this.i18nService.translate(`employment.${type}`);
+  }
+
+  protected seniorityLabel(level: SeniorityLevel): string {
+    return this.i18nService.translate(`seniority.${level}`);
+  }
+
+  protected sourceTypeLabel(type: Vacancy['sourceType']): string {
+    return this.i18nService.translate(`source.${type}`);
   }
 
   private patchForm(vacancy: Vacancy): void {

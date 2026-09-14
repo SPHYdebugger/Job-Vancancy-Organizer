@@ -14,13 +14,22 @@ A portfolio-grade Angular SaaS-style web app to manage backend job applications 
 - Import existing opportunities from Excel (`.xlsx`) using your current column format.
 - Keep architecture ready for future migration to Firebase Authentication + Firestore.
 
+## Product Experience
+
+- Fast application capture with six essential fields and progressive optional sections.
+- Action-oriented application list with quick views for active, interview, follow-up, and closed processes.
+- Focused detail screen with contextual process actions and a real event timeline.
+- Dashboard centered on active processes, response rate, interviews, and overdue follow-ups.
+- Secondary market insights for modality and technology trends.
+- Excel tooling loaded on demand so normal navigation does not download the spreadsheet engine.
+
 ## Tech Stack
 
 - Angular 20 (standalone components, strict TypeScript)
 - Reactive Forms
 - Angular Material
 - ApexCharts (`ng-apexcharts`)
-- Local persistence (`localStorage` / `sessionStorage`)
+- Local persistence (`localStorage` / `sessionStorage`) with PBKDF2 password hashing
 - Excel import (`xlsx`)
 
 ## Architecture

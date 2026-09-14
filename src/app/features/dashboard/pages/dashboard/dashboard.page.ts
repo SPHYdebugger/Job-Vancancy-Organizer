@@ -3,8 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -29,14 +27,12 @@ import { dashboardStatusToTranslationKey } from '../../../../shared/utils/label-
 import { DashboardAnalyticsService } from '../../services/dashboard-analytics.service';
 import { VacancyService, DashboardSnapshot } from '../../../vacancies/services/vacancy.service';
 import { VacancyFollowUp } from '../../../../core/models/vacancy-followup.model';
+import { VacancyEvent } from '../../../../core/models/vacancy-event.model';
 import { DashboardPreAggregates, createEmptyDashboardPreAggregates } from '../../../../core/models/dashboard-pre-aggregates.model';
 import {
-  CompanyInteraction,
   DashboardAnalytics,
   DistributionPoint,
   KpiMetric,
-  NextAction,
-  RecentVacancy,
   StackPoint
 } from '../../models/dashboard-analytics.model';
 import { DashboardVacancyDto } from '../../../vacancies/models/vacancy-list-item.dto';
@@ -99,9 +95,7 @@ interface DashboardFollowUpItem {
   imports: [
     CommonModule,
     DatePipe,
-    MatCardModule,
     MatButtonModule,
-    MatChipsModule,
     NgApexchartsModule,
     TranslatePipe,
     RouterLink
@@ -119,16 +113,18 @@ export class DashboardPageComponent {
   private readonly snapshot = toSignal(this.vacancyService.watchDashboardSnapshot(), {
     initialValue: {
       vacancies: [] as DashboardVacancyDto[],
+      events: [] as VacancyEvent[],
       preAggregates: createEmptyDashboardPreAggregates() as DashboardPreAggregates,
       followUps: [] as VacancyFollowUp[]
     } satisfies DashboardSnapshot
   });
 
   private readonly vacancies = computed(() => this.snapshot().vacancies);
+  private readonly events = computed(() => this.snapshot().events);
   private readonly preAggregates = computed(() => this.snapshot().preAggregates);
   private readonly followUps = computed(() => this.snapshot().followUps);
   protected readonly analytics = computed<DashboardAnalytics>(() =>
-    this.analyticsService.buildAnalytics(this.vacancies(), this.preAggregates())
+    this.analyticsService.buildAnalytics(this.vacancies(), this.preAggregates(), this.events(), this.followUps())
   );
   protected readonly hasData = computed(() => this.vacancies().length > 0);
   protected readonly hasFollowUpData = computed(() => this.followUps().length > 0);
@@ -137,7 +133,7 @@ export class DashboardPageComponent {
     const now = Date.now();
 
     return this.followUps()
-      .filter((followUp) => followUp.status !== 'cancelled')
+      .filter((followUp) => followUp.status === 'pending')
       .sort((left, right) => new Date(left.plannedDate).getTime() - new Date(right.plannedDate).getTime())
       .slice(0, 6)
       .map((followUp) => {
@@ -157,9 +153,6 @@ export class DashboardPageComponent {
       });
   });
   protected readonly kpiMetrics = computed<KpiMetric[]>(() => this.analytics().metrics);
-  protected readonly nextActions = computed<NextAction[]>(() => this.analytics().nextActions);
-  protected readonly recentVacancies = computed<RecentVacancy[]>(() => this.analytics().recentVacancies);
-  protected readonly topCompanies = computed<CompanyInteraction[]>(() => this.analytics().topCompanies);
   protected readonly chartLoadingState = signal<Record<ChartKey, boolean>>({
     applications: true,
     status: true,
@@ -223,6 +216,9 @@ export class DashboardPageComponent {
   protected metricLabel(metricId: string): string {
     const map: Record<string, TranslationKey> = {
       'total-vacancies': 'dashboard.kpi.totalVacancies',
+      active: 'dashboard.kpi.active',
+      'response-rate': 'dashboard.kpi.responseRate',
+      'overdue-followups': 'dashboard.kpi.overdueFollowUps',
       'cv-sent': 'dashboard.kpi.cvSent',
       applied: 'dashboard.kpi.applied',
       interviews: 'dashboard.kpi.interviews',
@@ -245,6 +241,12 @@ export class DashboardPageComponent {
     const negativeTrend = trendValue > 0 ? `-${trendValue}` : '0';
 
     switch (metricId) {
+      case 'active':
+        return this.i18nService.translate('dashboard.kpi.trend.thisWeekDelta', { value: signedTrend });
+      case 'response-rate':
+        return this.i18nService.translate('dashboard.kpi.trend.responses', { value: trendValue });
+      case 'overdue-followups':
+        return this.i18nService.translate('dashboard.kpi.trend.needsAttention', { value: trendValue });
       case 'total-vacancies':
         return this.i18nService.translate('dashboard.kpi.trend.thisWeekDelta', { value: signedTrend });
       case 'cv-sent':

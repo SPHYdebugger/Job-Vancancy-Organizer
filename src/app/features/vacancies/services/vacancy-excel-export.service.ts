@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import * as XLSX from 'xlsx';
 
 import { VacancyEvent } from '../../../core/models/vacancy-event.model';
 import { VacancyFollowUp } from '../../../core/models/vacancy-followup.model';
@@ -96,12 +95,13 @@ export class VacancyExcelExportService {
     'updatedAt'
   ];
 
-  public exportSnapshot(input: {
+  public async exportSnapshot(input: {
     vacancies: Vacancy[];
     events: VacancyEvent[];
     followUps: VacancyFollowUp[];
     fileName?: string;
-  }): void {
+  }): Promise<void> {
+    const XLSX = await import('xlsx');
     const workbook = XLSX.utils.book_new();
 
     const vacanciesRows = this.toVacancyRows(input.vacancies);

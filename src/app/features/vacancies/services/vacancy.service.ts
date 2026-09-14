@@ -11,6 +11,7 @@ import { DashboardVacancyDto, VacancyListItemDto } from '../models/vacancy-list-
 
 export interface DashboardSnapshot {
   vacancies: DashboardVacancyDto[];
+  events: VacancyEvent[];
   preAggregates: DashboardPreAggregates;
   followUps: VacancyFollowUp[];
 }
@@ -56,6 +57,7 @@ export class VacancyService {
   private readonly dashboardSnapshot$ = this.readModel$.pipe(
     map((state) => ({
       vacancies: state.vacancies.map((vacancy) => this.toDashboardVacancy(vacancy)),
+      events: state.events,
       preAggregates: state.preAggregates,
       followUps: state.followUps
     })),
@@ -350,6 +352,8 @@ export class VacancyService {
       modality: vacancy.modality,
       priority: vacancy.priority,
       applicationDate: vacancy.applicationDate,
+      nextFollowUpDate: vacancy.nextFollowUpDate,
+      followUpPending: vacancy.followUpPending,
       createdAt: vacancy.createdAt,
       updatedAt: vacancy.updatedAt
     };
@@ -364,6 +368,7 @@ export class VacancyService {
       applicationStatus: vacancy.applicationStatus,
       modality: vacancy.modality,
       priority: vacancy.priority,
+      companyResponse: vacancy.companyResponse,
       createdAt: vacancy.createdAt,
       discoveredAt: vacancy.discoveredAt,
       applicationDate: vacancy.applicationDate,
